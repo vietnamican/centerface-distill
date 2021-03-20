@@ -4,6 +4,7 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.model_zoo as model_zoo
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import pytorch_lightning as pl
@@ -15,6 +16,9 @@ from models.loss import RegLoss
 from models.model import Model
 from datasets import WiderFace
 
+model_urls = {
+    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+}
 
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
@@ -29,15 +33,17 @@ device = cfg.device
 
 # Network Setup
 net = Model()
-checkpoint_path = 'checkpoints/final.pth'
-if device == 'cpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-net.migrate(checkpoint, force=True, verbose=2)
+state_dict = model_zoo.load_url(model_urls['mobilenet_v2'], progress=True)
+net.base.migrate(state_dict, force=True)
+# checkpoint_path = 'checkpoints/final.pth'
+# if device == 'cpu':
+#     checkpoint = torch.load(
+#         checkpoint_path, map_location=lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# net.migrate(checkpoint, force=True, verbose=2)
 
-log_name = 'centerface/training'
+log_name = 'centerface_logs/training'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,

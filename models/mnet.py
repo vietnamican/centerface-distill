@@ -72,7 +72,7 @@ class InvertedResidual(nn.Module):
             return self.conv(x)
 
 
-class MobileNetV2(nn.Module):
+class MobileNetV2(Base):
     def __init__(self,width_mult=1.0,round_nearest=8,):
         super(MobileNetV2, self).__init__()
         self.feature_1 = nn.Sequential(
