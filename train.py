@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from config import Config as cfg
 from models.loss import RegLoss
-from models.mnet import get_mobile_net
+from models.mnet import CenterFace
 from datasets import WiderFace
 
 
@@ -21,7 +21,7 @@ dataloader = DataLoader(dataset, batch_size=cfg.batch_size,
 device = cfg.device
 
 # Network Setup
-net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
+net = CenterFace()
 
 # Training Setup
 optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
@@ -53,16 +53,21 @@ for e in range(cfg.epoch):
         optimizer.zero_grad()
         out = net(data)
 
-        heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
+        # heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
+        heatmaps = out[0]
+        heatmaps = heatmaps.squeeze_()
         l_heatmap = heatmap_loss(heatmaps, labels[:, 0])
 
-        offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
+        # offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
+        offs = out[1]
         l_off = off_loss(offs, labels[:, [1,2]])
 
-        whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
+        # whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
+        whs = out[2]
         l_wh = wh_loss(whs, labels[:, [3,4]])
 
-        lms = torch.cat([o['lm'].squeeze() for o in out], dim=0)
+        # lms = torch.cat([o['lm'].squeeze() for o in out], dim=0)
+        lms = out[3]
         l_lm = lm_loss(lms, labels[:, 5:])
 
         loss = l_heatmap + l_off + l_wh * 0.1 + l_lm * 0.1

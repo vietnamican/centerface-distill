@@ -224,30 +224,31 @@ class CenterFace(Base):
 
     def forward(self, x):
         x = self.base(x)
-        x = self.dla_up(x)
-        ret = {}
+        x = self.fpn(x)
+        # ret = {}
+        return [self.hm(x), self.off(x), self.wh(x), self.lm(x)]
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
         return [ret]
 
 
-def mobilenetv2_10(pretrained=True, **kwargs):
-    model = MobileNetV2(width_mult=1.0)
-    if pretrained:
-        state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
-                                              progress=True)
-        load_model(model,state_dict)
-    return model
+# def mobilenetv2_10(pretrained=True, **kwargs):
+#     model = MobileNetV2(width_mult=1.0)
+#     if pretrained:
+#         state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
+#                                               progress=True)
+#         load_model(model,state_dict)
+#     return model
 
-def mobilenetv2_5(pretrained=False, **kwargs):
-    model = MobileNetV2(width_mult=0.5)
-    if pretrained:
-        print('This version does not have pretrain weights.')
-    return model
+# def mobilenetv2_5(pretrained=False, **kwargs):
+#     model = MobileNetV2(width_mult=0.5)
+#     if pretrained:
+#         print('This version does not have pretrain weights.')
+#     return model
 
-# num_layers  : [10 , 5]
-def get_mobile_net(num_layers, heads, head_conv=24):
-  model = MobileNetSeg('mobilenetv2_{}'.format(num_layers), heads,
-                 pretrained=True,
-                 head_conv=head_conv)
-  return model
+# # num_layers  : [10 , 5]
+# def get_mobile_net(num_layers, heads, head_conv=24):
+#   model = MobileNetSeg('mobilenetv2_{}'.format(num_layers), heads,
+#                  pretrained=True,
+#                  head_conv=head_conv)
+#   return model

@@ -7,19 +7,22 @@ from PIL import Image
 
 # local imports
 from config import Config as cfg
-from models.mnet import get_mobile_net
+from models.mnet import CenterFace
 from utils import VisionKit
 
 
 def load_model():
-    net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
+    net = CenterFace()
     path = osp.join(cfg.checkpoints, cfg.restore_model)
     weights = torch.load(path, map_location=cfg.device)
-    net.load_state_dict(weights)
+    net.migrate(weights, force=True)
     net.eval()
     return net
 
 net = load_model()
+# checkpoint_path = 'checkpoints/final.pth'
+# checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
+# model.migrate(checkpoint, force=True, verbose=2)
 
 
 def preprocess(im):
@@ -35,13 +38,13 @@ def detect(im):
     data = data[None, ...]
     with torch.no_grad():
         out = net(data)
-    return out[0]
+    return out
 
 def decode(out):
-    hm = out['hm']
-    wh = out['wh']
-    off = out['off']
-    lm = out['lm']
+    hm = out[0]
+    off = out[1]
+    wh = out[2]
+    lm = out[3]
     hm = VisionKit.nms(hm, kernel=3)
     hm.squeeze_()
     off.squeeze_()
@@ -87,10 +90,13 @@ def visualize(im, bboxes, landmarks):
 
 
 if __name__ == '__main__':
-    impath = 'samples/d.jpg'
+    impath = 'samples/c.jpg'
     im = Image.open(impath)
     new_im, params = preprocess(im)
     pred = detect(new_im)
     bboxes, landmarks = decode(pred)
-    bboxes, landmarks = postprocess(bboxes, landmarks, params)
-    visualize(im, bboxes, landmarks)
+    if len(bboxes) > 0:
+        bboxes, landmarks = postprocess(bboxes, landmarks, params)
+        visualize(im, bboxes, landmarks)
+    else:
+        print("Not detected any face")
