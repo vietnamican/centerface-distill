@@ -248,7 +248,7 @@ class ConvBatchNormRelu6(Base):
             self._release()
 
 
-class BasicBlockTruncate(Base):
+class VGGBlock(Base):
 
     def __init__(
         self,

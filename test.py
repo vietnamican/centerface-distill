@@ -12,12 +12,24 @@ from models.loss import RegLoss
 from models.mnet import CenterFace
 from datasets import WiderFace
 
-model = CenterFace()
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock
+from torchsummary import summary
 
-for name, c in model.base.named_children():
-    print(name)
+# model = CenterFace()
 
-checkpoint_path = 'checkpoints/final.pth'
-checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
-model.migrate(checkpoint, force=True, verbose=2)
+# for name, c in model.base.named_children():
+#     print(name)
+
+# checkpoint_path = 'checkpoints/final.pth'
+# checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
+# model.migrate(checkpoint, force=True, verbose=2)
 # load_model(model, checkpoint)
+
+mbnet = MobileNetV2()
+# mbnet = MobileNetV2VGGBlock()
+summary(
+    mbnet,
+    (3, 416, 416),
+    # col_names=["input_size", "output_size", "num_params", "kernel_size"],
+    depth=5
+)
