@@ -206,7 +206,7 @@ class FPN(nn.Module):
 class CenterFace(Base):
     def __init__(self, head_conv=24, pretrained = True):
         super(CenterFace, self).__init__()
-        self.heads = {'hm':1, 'wh':2, 'lm':10, 'off':2}
+        self.heads = {'hm':1, 'off':2, 'wh':2, 'lm':10, }
         self.base = MobileNetV2()
         channels = [24, 32, 96, 320]
         self.fpn = FPN(channels, out_dim=head_conv)

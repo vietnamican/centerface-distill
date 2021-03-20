@@ -11,19 +11,29 @@ from models.mnet import CenterFace
 from utils import VisionKit
 
 
-def load_model():
-    net = CenterFace()
-    path = osp.join(cfg.checkpoints, cfg.restore_model)
-    weights = torch.load(path, map_location=cfg.device)
-    net.migrate(weights, force=True)
-    net.eval()
-    return net
+# def load_model():
+#     net = CenterFace()
+#     path = osp.join(cfg.checkpoints, cfg.restore_model)
+#     weights = torch.load(path, map_location=cfg.device)
+#     net.migrate(weights, force=True)
+#     net.eval()
+#     return net
 
-net = load_model()
-# checkpoint_path = 'checkpoints/final.pth'
-# checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
-# model.migrate(checkpoint, force=True, verbose=2)
+device = 'gpu'
 
+
+net = CenterFace()
+# checkpoint_path = 'centerface/training/version_0/checkpoints/checkpoint-epoch=00-val_loss=0.0292.ckpt'
+# if device == 'cpu':
+#     checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+
+net.migrate(orig_model.state_dict(), force=True, verbose=2)
+# net.migrate(net.lm.state_dict(), orig_model.landmarks.state_dict(), force=True)
+# net.migrate(net.off.state_dict(), orig_model.landmarks.state_dict(), force=True)
+# print(orig_model.state_dict().keys())
 
 def preprocess(im):
     new_im, _, _, *params = VisionKit.letterbox(im, cfg.insize)

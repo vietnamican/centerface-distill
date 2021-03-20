@@ -31,7 +31,7 @@ class Config:
 
     # training
     epoch = 90
-    lr = 5e-4
+    lr = 5e-6
     batch_size = 24
     pin_memory = True
     num_workers = 4
