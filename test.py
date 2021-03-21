@@ -12,7 +12,7 @@ from models.loss import RegLoss
 from models.mnet import CenterFace
 from datasets import WiderFace
 
-from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1
 from torchsummary import summary
 
 # model = CenterFace()
@@ -25,8 +25,9 @@ from torchsummary import summary
 # model.migrate(checkpoint, force=True, verbose=2)
 # load_model(model, checkpoint)
 
-mbnet = MobileNetV2()
+# mbnet = MobileNetV2()
 # mbnet = MobileNetV2VGGBlock()
+mbnet = MobileNetV2VGGBlockTemper1()
 summary(
     mbnet,
     (3, 416, 416),

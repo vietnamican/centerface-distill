@@ -23,14 +23,14 @@ device = 'gpu'
 
 
 net = CenterFace()
-# checkpoint_path = 'centerface/training/version_0/checkpoints/checkpoint-epoch=00-val_loss=0.0292.ckpt'
-# if device == 'cpu':
-#     checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
-# else:
-#     checkpoint = torch.load(checkpoint_path)
-# state_dict = checkpoint['state_dict']
+checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=14-val_loss=0.0577.ckpt'
+if device == 'cpu':
+    checkpoint = torch.load(checkpoint_path, map_location= lambda storage, loc: storage)
+else:
+    checkpoint = torch.load(checkpoint_path)
+state_dict = checkpoint['state_dict']
 
-net.migrate(orig_model.state_dict(), force=True, verbose=2)
+net.migrate(state_dict, force=True, verbose=2)
 # net.migrate(net.lm.state_dict(), orig_model.landmarks.state_dict(), force=True)
 # net.migrate(net.off.state_dict(), orig_model.landmarks.state_dict(), force=True)
 # print(orig_model.state_dict().keys())
@@ -100,13 +100,14 @@ def visualize(im, bboxes, landmarks):
 
 
 if __name__ == '__main__':
-    impath = 'samples/c.jpg'
+    impath = 'samples/a.jpg'
     im = Image.open(impath)
     new_im, params = preprocess(im)
     pred = detect(new_im)
     bboxes, landmarks = decode(pred)
     if len(bboxes) > 0:
         bboxes, landmarks = postprocess(bboxes, landmarks, params)
-        visualize(im, bboxes, landmarks)
+        print(bboxes)
+        # visualize(im, bboxes, landmarks)
     else:
         print("Not detected any face")

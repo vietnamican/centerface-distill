@@ -1,8 +1,8 @@
 from torch import nn
 import torch.utils.model_zoo as model_zoo
 
-from .base import Base, VGGBlock
-from .layers import ConvBNReLU, InvertedResidual
+from ..base import Base, VGGBlock
+from ..layers import ConvBNReLU, InvertedResidual
 
 __all__ = ['MobileNetV2']
 
@@ -80,6 +80,44 @@ class MobileNetV2VGGBlock(Base):
         self.feature_6 = nn.Sequential(
             VGGBlock(96, 160, 2),
             VGGBlock(160, 160, 1),
+            VGGBlock(160, 160, 1),
+            VGGBlock(160, 320, 1),
+        )
+
+    def forward(self, x):
+        y = []
+        x = self.feature_1(x)
+        y.append(x)
+        x = self.feature_2(x)
+        y.append(x)
+        x = self.feature_4(x)
+        y.append(x)
+        y.append(self.feature_6(x))
+        return y
+
+class MobileNetV2VGGBlockTemper1(Base):
+    def __init__(self, width_mult=1.0, round_nearest=8,):
+        super().__init__()
+        self.feature_1 = nn.Sequential(
+            VGGBlock(3, 32, 2),
+            VGGBlock(32, 16, 1),
+            VGGBlock(16, 24, 2),
+            VGGBlock(24, 24, 1),
+        )
+        self.feature_2 = nn.Sequential(
+            VGGBlock(24, 32, 2),
+            VGGBlock(32, 32, 1),
+            VGGBlock(32, 32, 1),
+        )
+        self.feature_4 = nn.Sequential(
+            VGGBlock(32, 64, 2),
+            VGGBlock(64, 64, 1),
+            VGGBlock(64, 64, 1),
+            VGGBlock(64, 96, 1),
+            VGGBlock(96, 96, 1),
+        )
+        self.feature_6 = nn.Sequential(
+            VGGBlock(96, 160, 2),
             VGGBlock(160, 160, 1),
             VGGBlock(160, 320, 1),
         )

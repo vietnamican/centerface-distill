@@ -45,7 +45,7 @@ class Model(CenterFace):
         return loss
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=5e-4)
+        optimizer = optim.Adam(self.parameters(), lr=5e-6)
         lr_scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer, [90, 120], 0.1)
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}

@@ -4,7 +4,7 @@ from torch import nn
 import pytorch_lightning as pl
 from typing import Type, Any, Callable, Union, List, Optional
 
-from .tempered_model import TemperedModel
+from ..tempered_model import TemperedModel
 
 
 class MobileNetTemperWrapper(TemperedModel):
