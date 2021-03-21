@@ -95,6 +95,16 @@ class MobileNetV2VGGBlock(Base):
         y.append(self.feature_6(x))
         return y
 
+    def release(self):
+        is_self = True
+        for module in self.modules():
+            if is_self:
+                is_self = False
+                continue
+            if hasattr(module, 'release'):
+                module.release()
+
+
 class MobileNetV2VGGBlockTemper1(Base):
     def __init__(self, width_mult=1.0, round_nearest=8,):
         super().__init__()
@@ -132,3 +142,12 @@ class MobileNetV2VGGBlockTemper1(Base):
         y.append(x)
         y.append(self.feature_6(x))
         return y
+
+    def release(self):
+        is_self = True
+        for module in self.modules():
+            if is_self:
+                is_self = False
+                continue
+            if hasattr(module, 'release'):
+                module.release()

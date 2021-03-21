@@ -17,6 +17,8 @@ from config import Config as cfg
 from datasets import WiderFace
 from models.mobilenetv2 import MobileNetTemperWrapper, configs
 
+pl.seed_everything(42)
+
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
                          cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
@@ -26,6 +28,8 @@ valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
                        cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+
+device = 'cpu'
 
 if __name__ == '__main__':
     mode = 'temper'
@@ -49,12 +53,36 @@ if __name__ == '__main__':
         callbacks = [loss_callback, lr_monitor]
         model = MobileNetTemperWrapper(
             config['orig'](), config['tempered'](), mode, config["orig_module_names"], config["tempered_module_names"], config["is_trains"])
-
-        # model.orig.migrate()
-        trainer = pl.Trainer(
-            max_epochs=70,
-            logger=logger,
-            callbacks=callbacks,
-            # gpus=1
-        )
+        checkpoint_path = 'checkpoints/checkpoint-epoch=55-val_loss=0.0230.ckpt'
+        if device == 'cpu' or device == 'tpu':
+            checkpoint = torch.load(
+                checkpoint_path, map_location=lambda storage, loc: storage)
+        else:
+            checkpoint = torch.load(checkpoint_path)
+        state_dict = checkpoint['state_dict']
+        model.orig.migrate(state_dict, force=True, verbose=0)
+        model.tempered.release()
+        for i, (name, p) in enumerate(model.tempered.named_parameters()):
+            if p.requires_grad == True:
+                print(i, name)
+        if device == 'tpu':
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks,
+                tpu_cores=8
+            )
+        elif device == 'gpu':
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks,
+                gpus=1
+            )
+        else:
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks
+            )
         trainer.fit(model, trainloader, valloader)

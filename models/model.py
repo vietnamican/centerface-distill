@@ -44,6 +44,14 @@ class Model(CenterFace):
                       'val_l_off': l_off, 'val_l_wh': l_wh, 'val_l_lm': l_lm}, prog_bar=False)
         return loss
 
+    def test_step(self, batch, batch_idx):
+        l_heatmap, l_off, l_wh, l_lm = self.shared_step(batch)
+        loss = self.lambdas[0] * l_heatmap + self.lambdas[1] * \
+            l_off + self.lambdas[2] * l_wh + self.lambdas[3] * l_lm
+        self.log_dict({'test_loss': loss, 'test_l_hm': l_heatmap,
+                      'test_l_off': l_off, 'test_l_wh': l_wh, 'test_l_lm': l_lm}, prog_bar=False)
+        return loss
+
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=5e-6)
         lr_scheduler = optim.lr_scheduler.MultiStepLR(

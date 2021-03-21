@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+from time import time
 
 import torch
 import torch.nn as nn
@@ -26,8 +27,15 @@ from torchsummary import summary
 # load_model(model, checkpoint)
 
 # mbnet = MobileNetV2()
-# mbnet = MobileNetV2VGGBlock()
-mbnet = MobileNetV2VGGBlockTemper1()
+mbnet = MobileNetV2VGGBlock()
+# mbnet = MobileNetV2VGGBlockTemper1()
+mbnet.release()
+# x = torch.Tensor(1, 3, 416, 416)
+# start = time()
+# for i in range(100):
+#     mbnet(x)
+# stop = time()
+# print(stop - start)
 summary(
     mbnet,
     (3, 416, 416),

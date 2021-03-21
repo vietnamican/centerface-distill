@@ -1,9 +1,7 @@
 from .mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1
 from .mobile_net_temper_wrapper import MobileNetTemperWrapper
 
-configs = [
-
-]
+configs = []
 
 orig_vggblock = {
     'orig': MobileNetV2,

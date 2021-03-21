@@ -114,3 +114,4 @@ else:
     )
 
 trainer.fit(net, trainloader, valloader)
+# trainer.test(net, trainloader)
