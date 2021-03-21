@@ -6,3 +6,5 @@ blog/
 __pycache__
 
 *_logs/
+*.ckpt
+*.pt

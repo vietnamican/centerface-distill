@@ -43,7 +43,7 @@ class CenterFace(Base):
     def __init__(self, head_conv=24, pretrained=True):
         super(CenterFace, self).__init__()
         self.heads = {'hm': 1, 'wh': 2, 'lm': 10, 'off': 2}
-        self.base = MobileNetV2()
+        # self.base = MobileNetV2()
         channels = [24, 32, 96, 320]
         self.fpn = FPN(channels, out_dim=head_conv)
         for head in self.heads:
@@ -63,9 +63,6 @@ class CenterFace(Base):
         x = self.fpn(x)
         # ret = {}
         return [self.hm(x), self.off(x), self.wh(x), self.lm(x)]
-        for head in self.heads:
-            ret[head] = self.__getattr__(head)(x)
-        return [ret]
 
 
 # def mobilenetv2_10(pretrained=True, **kwargs):

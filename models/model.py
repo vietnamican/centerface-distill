@@ -8,8 +8,9 @@ from .loss import RegLoss
 
 
 class Model(CenterFace):
-    def __init__(self, head_conv=24, pretrained=True):
+    def __init__(self, base, head_conv=24, pretrained=True):
         super(Model, self).__init__()
+        self.base = base()
         self.heatmap_loss = nn.MSELoss()
         self.wh_loss = RegLoss()
         self.off_loss = RegLoss()

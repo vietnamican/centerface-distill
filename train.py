@@ -1,3 +1,4 @@
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock
 import os
 import os.path as osp
 
@@ -63,18 +64,33 @@ else:
 # device = cfg.device
 
 # Network Setup
-net = Model()
-state_dict = model_zoo.load_url(model_urls['mobilenet_v2'], progress=True)
-net.base.migrate(state_dict, force=True)
-checkpoint_path = 'checkpoints/final.pth'
+net = Model(base=MobileNetV2VGGBlock)
+# state_dict = model_zoo.load_url(model_urls['mobilenet_v2'], progress=True)
+# net.base.migrate(state_dict, force=True)
+# checkpoint_path = 'checkpoints/final.pth'
+checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=66-val_loss=0.0583.ckpt'
 if device == 'cpu':
     checkpoint = torch.load(
         checkpoint_path, map_location=lambda storage, loc: storage)
 else:
     checkpoint = torch.load(checkpoint_path)
-net.migrate(checkpoint, force=True, verbose=2)
+state_dict = checkpoint['state_dict']
 
-log_name = 'centerface_logs/training'
+net.migrate(net.hm.state_dict(), net.filter_state_dict_with_prefix(state_dict, 'hm'), force=True, verbose=2)
+net.migrate(net.wh.state_dict(), net.filter_state_dict_with_prefix(state_dict, 'wh'), force=True, verbose=2)
+net.migrate(net.lm.state_dict(), net.filter_state_dict_with_prefix(state_dict, 'lm'), force=True, verbose=2)
+net.migrate(net.off.state_dict(), net.filter_state_dict_with_prefix(state_dict, 'off'), force=True, verbose=2)
+
+checkpoint_path = 'mobilenetv2_vggblock.ckpt'
+if device == 'cpu':
+    checkpoint = torch.load(
+        checkpoint_path, map_location=lambda storage, loc: storage)
+else:
+    checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+net.base.migrate(checkpoint, force=True, verbose=2)
+
+log_name = 'centerface_logs/tuning'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,

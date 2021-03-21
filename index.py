@@ -61,10 +61,6 @@ if __name__ == '__main__':
             checkpoint = torch.load(checkpoint_path)
         state_dict = checkpoint['state_dict']
         model.orig.migrate(state_dict, force=True, verbose=0)
-        model.tempered.release()
-        for i, (name, p) in enumerate(model.tempered.named_parameters()):
-            if p.requires_grad == True:
-                print(i, name)
         if device == 'tpu':
             trainer = pl.Trainer(
                 max_epochs=90,
