@@ -2,74 +2,84 @@ import os
 import os.path as osp
 
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+import torch.utils.model_zoo as model_zoo
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 
 from config import Config as cfg
-from models.loss import RegLoss
-from models.mnet import get_mobile_net
+from models.model import Model
+from models.mnet import MobileNetV2
 from datasets import WiderFace
 
+model_urls = {
+    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+}
 
+state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
+                                progress=True)
 
 # Data Setup
-dataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma, cfg.downscale, cfg.insize, cfg.train_transforms)
-dataloader = DataLoader(dataset, batch_size=cfg.batch_size, 
-    pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device = cfg.device
+traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
+                    cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
+trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
+                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+
+valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
+                    cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
+valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
+                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+device = 'cpu'
 
 # Network Setup
-net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
+# net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
+net = Model(MobileNetV2)
+net.base.migrate(state_dict, force=True, verbose=2)
 
 # Training Setup
-optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
-heatmap_loss = nn.MSELoss()
-wh_loss = RegLoss()
-off_loss = RegLoss()
-lm_loss = RegLoss()
+# optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
+# heatmap_loss = nn.MSELoss()
+# wh_loss = RegLoss()
+# off_loss = RegLoss()
+# lm_loss = RegLoss()
 
-# Checkpoints Setup
-checkpoints = cfg.checkpoints
-os.makedirs(checkpoints, exist_ok=True)
+log_name = 'centerface_logs/training'
+logger = TensorBoardLogger(
+    save_dir=os.getcwd(),
+    name=log_name,
+    # log_graph=True,
+    # version=0
+)
 
-if cfg.restore:
-    weights_path = osp.join(checkpoints, cfg.restore_model)
-    net.load_state_dict(torch.load(weights_path, map_location=device))
-    print(f"load weights from checkpoints: {cfg.restore_model}")
+loss_callback = ModelCheckpoint(
+    monitor='val_loss',
+    dirpath='',
+    filename='checkpoint-{epoch:02d}-{val_loss:.4f}',
+    save_top_k=-1,
+    mode='min',
+)
+callbacks = [loss_callback]
 
-# Start training
-net.train()
-net.to(device)
+if device == 'tpu':
+    trainer = pl.Trainer(
+        max_epochs=90,
+        logger=logger,
+        callbacks=callbacks,
+        tpu_cores=8
+    )
+elif device == 'gpu':
+    trainer = pl.Trainer(
+        max_epochs=90,
+        logger=logger,
+        callbacks=callbacks,
+        gpus=1
+    )
+else:
+    trainer = pl.Trainer(
+        max_epochs=90,
+        logger=logger,
+        callbacks=callbacks
+    )
 
-
-for e in range(cfg.epoch):
-    for data, labels in tqdm(dataloader, desc=f"Epoch {e}/{cfg.epoch}",
-                             ascii=True, total=len(dataloader)):
-        data = data.to(device)
-        labels = labels.to(device)
-        
-        optimizer.zero_grad()
-        out = net(data)
-
-        heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
-        l_heatmap = heatmap_loss(heatmaps, labels[:, 0])
-
-        offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
-        l_off = off_loss(offs, labels[:, [1,2]])
-
-        whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
-        l_wh = wh_loss(whs, labels[:, [3,4]])
-
-        lms = torch.cat([o['lm'].squeeze() for o in out], dim=0)
-        l_lm = lm_loss(lms, labels[:, 5:])
-
-        loss = l_heatmap + l_off + l_wh * 0.1 + l_lm * 0.1
-        loss.backward()
-        optimizer.step()
-
-    print(f"Epoch {e}/{cfg.epoch}, heat: {l_heatmap:.6f}, off: {l_off:.6f}, size: {l_wh:.6f}, landmark: {l_lm:.6f}")
-
-    backbone_path = osp.join(checkpoints, f"{e}.pth")
-    torch.save(net.state_dict(), backbone_path)
+trainer.fit(net, trainloader, valloader)

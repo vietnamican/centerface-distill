@@ -21,8 +21,8 @@ class Config:
     ])
 
     # dataset
-    dataroot = '/content/WIDER_train/images'
-    annfile = '/content/retinaface_gt_v1.1/train/label.txt'
+    dataroot = '../centerface-distill/data/WIDER_train/images'
+    annfile = '../centerface-distill/data/retinaface_gt_v1.1/train/label.txt'
 
     # checkpoints
     checkpoints = 'checkpoints'

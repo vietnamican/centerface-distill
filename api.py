@@ -7,19 +7,31 @@ from PIL import Image
 
 # local imports
 from config import Config as cfg
-from models.mnet import get_mobile_net
+from models.mnet import MobileNetV2
+from models.model import Model
 from utils import VisionKit
 
 
-def load_model():
-    net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
-    path = osp.join(cfg.checkpoints, cfg.restore_model)
-    weights = torch.load(path, map_location=cfg.device)
-    net.load_state_dict(weights)
-    net.eval()
-    return net
+# def load_model():
+#     net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
+#     path = osp.join(cfg.checkpoints, cfg.restore_model)
+#     weights = torch.load(path, map_location=cfg.device)
+#     net.load_state_dict(weights)
+#     net.eval()
+#     return net
 
-net = load_model()
+device = 'cpu'
+checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=66-val_loss=0.0583.ckpt'
+if device == 'cpu':
+    checkpoint = torch.load(
+        checkpoint_path, map_location=lambda storage, loc: storage)
+else:
+    checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+state_dict = checkpoint
+
+net = Model(MobileNetV2)
+net.migrate(state_dict, force=True, verbose=2)
 
 
 def preprocess(im):

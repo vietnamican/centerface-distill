@@ -9,10 +9,9 @@ from PIL import Image
 from utils import VisionKit
 
 
-
 class WiderFace(Dataset, VisionKit):
 
-    def __init__(self, dataroot, annfile, sigma, downscale, insize, transforms=None):
+    def __init__(self, dataroot, annfile, sigma, downscale, insize, transforms=None, mode='train'):
         """
         Args:
             dataroot: image file directory
@@ -28,7 +27,13 @@ class WiderFace(Dataset, VisionKit):
         self.insize = insize
         self.transforms = transforms
         self.namelist, self.annslist = self.parse_annfile(annfile)
-    
+        self.split_index = -1000
+        if mode == 'train':
+            self.namelist, self.annslist = \
+                self.namelist[:self.split_index], self.annslist[:self.split_index]
+        else:
+            self.namelist, self.annslist = self.namelist[self.split_index:], self.annslist[self.split_index:]
+
     def __getitem__(self, idx):
         path = osp.join(self.root, self.namelist[idx])
         im = Image.open(path)
@@ -38,7 +43,7 @@ class WiderFace(Dataset, VisionKit):
         if self.transforms is not None:
             im = self.transforms(im)
         return im, hm
-        
+
     def __len__(self):
         return len(self.annslist)
 
@@ -46,12 +51,13 @@ class WiderFace(Dataset, VisionKit):
         bboxes[:, 2] += bboxes[:, 0]
         bboxes[:, 3] += bboxes[:, 1]
         return bboxes
-    
+
     def preprocess(self, im, anns):
         bboxes = anns[:, :4]
         bboxes = self.xywh2xyxy(bboxes)
         landmarks = anns[:, 4:-1]
-        im, bboxes, landmarks, *_ = self.letterbox(im, self.insize, bboxes, landmarks)
+        im, bboxes, landmarks, * \
+            _ = self.letterbox(im, self.insize, bboxes, landmarks)
         return im, bboxes, landmarks
 
     def make_heatmaps(self, im, bboxes, landmarks, downscale):
@@ -73,27 +79,29 @@ class WiderFace(Dataset, VisionKit):
 
         for bbox, landmark in zip(bboxes, landmarks):
             try:
-                #0 heatmap
-                left, top, right, bottom = map(lambda x: int(x / downscale), bbox)
+                # 0 heatmap
+                left, top, right, bottom = map(
+                    lambda x: int(x / downscale), bbox)
                 x = (left + right) // 2
                 y = (top + bottom) // 2
                 grid_dist = (grid_x - x) ** 2 + (grid_y - y) ** 2
                 heatmap = np.exp(-0.5 * grid_dist / self.sigma ** 2)
                 res[0] = np.maximum(heatmap, res[0])
-                #1, 2 center offset
+                # 1, 2 center offset
                 original_x = (bbox[0] + bbox[2]) / 2
                 original_y = (bbox[1] + bbox[3]) / 2
 
                 res[1][y, x] = original_x / downscale - x
                 res[2][y, x] = original_y / downscale - y
-                #3, 4 size
+                # 3, 4 size
                 width = right - left
                 height = bottom - top
                 res[3][y, x] = np.log(width + 1e-4)
                 res[4][y, x] = np.log(height + 1e-4)
-                #5-14 landmarks 
-                if landmark[0] == -1: continue
-                original_width  = bbox[2] - bbox[0]
+                # 5-14 landmarks
+                if landmark[0] == -1:
+                    continue
+                original_width = bbox[2] - bbox[0]
                 original_height = bbox[3] - bbox[1]
                 skip = 3
                 lm_xs = landmark[0::skip]
@@ -104,7 +112,7 @@ class WiderFace(Dataset, VisionKit):
                     res[i][y, x] = lm_x
                     res[i+1][y, x] = lm_y
             except:
-              pass
+                pass
         return res
 
     def parse_annfile(self, annfile):
@@ -128,6 +136,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     dataroot = '/data/WIDER_train/images'
     annfile = '/data/retinaface_gt_v1.1/train/label.txt'
-    dataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma, cfg.downscale, cfg.insize, cfg.train_transforms)
+    dataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
+                        cfg.downscale, cfg.insize, cfg.train_transforms)
     ids = 10969
     print(dataset.namelist[ids])
