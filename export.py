@@ -15,7 +15,7 @@ from datasets import WiderFace
 
 device = 'cpu'
 
-config = configs[0]
+config = configs[1]
 net = MobileNetTemperWrapper(
     config['orig'](),
     config['tempered'](),
@@ -24,12 +24,12 @@ net = MobileNetTemperWrapper(
     config['tempered_module_names'],
     config['is_trains'],
 )
-checkpoint_path = 'centerface_logs/temper/version_2/checkpoints/checkpoint-epoch=53-val_loss=2.8531.ckpt'
-if device == 'cpu' or device == 'tpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-net.migrate(state_dict, force=True, verbose=2)
-net.export('config0_checkpoint-epoch=53-val_loss=2.8531.ckpt')
+# checkpoint_path = 'centerface_logs/temper/version_2/checkpoints/checkpoint-epoch=53-val_loss=2.8531.ckpt'
+# if device == 'cpu' or device == 'tpu':
+#     checkpoint = torch.load(
+#         checkpoint_path, map_location=lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+# net.migrate(state_dict, force=True, verbose=2)
+net.export('temp.ckpt')

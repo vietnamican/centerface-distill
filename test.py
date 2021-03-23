@@ -1,17 +1,26 @@
+import os
+import os.path as osp
+
 import torch
-from torch.utils.data.dataloader import DataLoader
-from torchsummary import summary
+from torch.utils.data import DataLoader
 import torch.utils.model_zoo as model_zoo
+import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import TensorBoardLogger
 
-from models.model import Model
-from datasets import WiderFaceVal
 from config import Config as cfg
+from models.model import Model
+from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1
+from datasets import WiderFace, WiderFaceVal
 
-traindataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
-                         cfg.downscale, cfg.insize, cfg.train_transforms)
-trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
-                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+device = 'cpu'
+checkpoint_path = 'temp.ckpt'
 
-for im, hm in trainloader:
-    print(im.shape)
-    print(hm.shape)
+net = Model(MobileNetV2VGGBlockTemper1)
+if device == 'cpu' or device == 'tpu':
+    checkpoint = torch.load(
+        checkpoint_path, map_location=lambda storage, loc: storage)
+else:
+    checkpoint = torch.load(checkpoint_path)
+state_dict = checkpoint
+net.migrate(state_dict, force=True, verbose=2)
