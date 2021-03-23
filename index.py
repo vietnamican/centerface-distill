@@ -29,7 +29,7 @@ valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
-device = 'cpu'
+device = 'gpu'
 
 if __name__ == '__main__':
     mode = 'temper'
@@ -54,32 +54,33 @@ if __name__ == '__main__':
         model = MobileNetTemperWrapper(
             config['orig'](), config['tempered'](), mode, config["orig_module_names"], config["tempered_module_names"], config["is_trains"])
         
-        # checkpoint_path = 'checkpoints/checkpoint-epoch=55-val_loss=0.0230.ckpt'
-        # if device == 'cpu' or device == 'tpu':
-        #     checkpoint = torch.load(
-        #         checkpoint_path, map_location=lambda storage, loc: storage)
-        # else:
-        #     checkpoint = torch.load(checkpoint_path)
+        checkpoint_path = 'checkpoints/final.pth'
+        if device == 'cpu' or device == 'tpu':
+            checkpoint = torch.load(
+                checkpoint_path, map_location=lambda storage, loc: storage)
+        else:
+            checkpoint = torch.load(checkpoint_path)
         # state_dict = checkpoint['state_dict']
-        # model.orig.migrate(state_dict, force=True, verbose=0)
-        # if device == 'tpu':
-        #     trainer = pl.Trainer(
-        #         max_epochs=90,
-        #         logger=logger,
-        #         callbacks=callbacks,
-        #         tpu_cores=8
-        #     )
-        # elif device == 'gpu':
-        #     trainer = pl.Trainer(
-        #         max_epochs=90,
-        #         logger=logger,
-        #         callbacks=callbacks,
-        #         gpus=1
-        #     )
-        # else:
-        #     trainer = pl.Trainer(
-        #         max_epochs=90,
-        #         logger=logger,
-        #         callbacks=callbacks
-        #     )
-        # trainer.fit(model, trainloader, valloader)
+        state_dict = checkpoint
+        model.orig.migrate(state_dict, force=True, verbose=2)
+        if device == 'tpu':
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks,
+                tpu_cores=8
+            )
+        elif device == 'gpu':
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks,
+                gpus=1
+            )
+        else:
+            trainer = pl.Trainer(
+                max_epochs=90,
+                logger=logger,
+                callbacks=callbacks
+            )
+        trainer.fit(model, trainloader, valloader)

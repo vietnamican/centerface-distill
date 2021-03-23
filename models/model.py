@@ -3,7 +3,7 @@ from torch import nn
 from torch import optim
 import pytorch_lightning as pl
 
-from .mnet import MobileNetSeg, MobileNetV2
+from .mnet import MobileNetSeg
 from .base import Base
 from .loss import RegLoss
 

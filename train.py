@@ -10,7 +10,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from config import Config as cfg
 from models.model import Model
-from models.mobilenetv2 import MobileNetV2VGGBlock
+from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2
 from datasets import WiderFace
 
 model_urls = {
@@ -35,7 +35,7 @@ device = 'cpu'
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
 
-net = Model(MobileNetV2VGGBlock)
+net = Model(MobileNetV2)
 net.base.migrate(state_dict, force=True, verbose=2)
 
 # Training Setup
