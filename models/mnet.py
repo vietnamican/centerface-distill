@@ -223,7 +223,7 @@ class MobileNetSeg(Base):
         super(MobileNetSeg, self).__init__()
         self.heads = heads
         self.base = base()
-        channels = self.base.feat_channel
+        channels = [320, 96, 32, 24]
         self.dla_up = MobileNetUp(channels, out_dim=head_conv)
         for head in self.heads:
             classes = self.heads[head]
