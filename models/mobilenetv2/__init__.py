@@ -48,23 +48,23 @@ orig_vggblock = {
     ],
     'is_trains' : [
         True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
     ]
 }
 configs.append(orig_vggblock)
@@ -128,3 +128,4 @@ vgg_vggblocktemper1 = {
     ]
 }
 
+configs.append(vgg_vggblocktemper1)

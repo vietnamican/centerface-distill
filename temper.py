@@ -29,16 +29,18 @@ valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
-device = 'gpu'
+device = 'cpu'
 
 if __name__ == '__main__':
     mode = 'temper'
-    other_information = ''
+    other_information = 'vgg_vggblocktemper1'
     if len(other_information) > 0:
-        mode = '{}_{}'.format(mode, other_information)
-    config = configs[0]
+        mode_name = '{}_{}'.format(mode, other_information)
+    else:
+        mode_name = mode
+    config = configs[1]
     if mode == 'temper':
-        log_name = 'centerface_logs/{}'.format(mode)
+        log_name = 'centerface_logs/{}'.format(mode_name)
         logger = TensorBoardLogger(
             save_dir=os.getcwd(),
             name=log_name,
@@ -63,8 +65,9 @@ if __name__ == '__main__':
                 checkpoint_path, map_location=lambda storage, loc: storage)
         else:
             checkpoint = torch.load(checkpoint_path)
-        # state_dict = checkpoint['state_dict']
-        state_dict = checkpoint
+        state_dict = checkpoint['state_dict']
+        state_dict = model.filter_state_dict_with_prefix(state_dict, 'base')
+        # state_dict = checkpoint
         model.orig.migrate(state_dict, force=True, verbose=2)
         if device == 'tpu':
             trainer = pl.Trainer(

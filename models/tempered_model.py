@@ -68,9 +68,6 @@ class TemperedModel(Base):
                 "Not in one of modes: ['training', 'temper', 'tuning', 'inference']")
             return x
 
-    def temper_forward(self, x):
-        return self.temper_forward_path(x)
-
     def training_step(self, batch, batch_idx):
         x, y = batch
         if self.mode in ['training', 'tuning', 'fast_tuning']:
@@ -183,6 +180,7 @@ class TemperedModel(Base):
                             self.defrost_with_prefix(module_name)
                     else:
                         self.defrost_with_prefix(module_names)
+            self._trim_temper_path()
         elif mode in ['inference', 'tuning']:
             for orig_module_names, tempered_module_names, is_train in zip(self.orig_module_names, self.tempered_module_names, self.is_trains):
                 if is_train:
@@ -241,6 +239,20 @@ class TemperedModel(Base):
             self.accuracy = pl.metrics.Accuracy()
             self.val_accuracy = pl.metrics.Accuracy()
             self.test_accuracy = pl.metrics.Accuracy()
+    
+    def _trim_temper_path(self):
+        last_index = -1
+        for i in range(len(self.is_trains)):
+            if self.is_trains[i]:
+                last_index = i  
+        if last_index != -1:
+            last_index += 1
+            if last_index != len(self.is_trains):
+                self.orig_module_names = self.orig_module_names[:last_index]
+                self.orig_modules = self.orig_modules[:last_index]
+                self.tempered_module_names = self.tempered_module_names[:last_index]
+                self.tempered_module_names = self.tempered_module_names[:last_index]
+                self.is_trains = self.is_trains[:last_index]
 
     def register_modules(self):
         self.orig_modules = []
