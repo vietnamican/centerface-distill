@@ -11,7 +11,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from config import Config as cfg
 from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock
-from datasets import WiderFace
+from datasets import WiderFace, WiderFaceVal
 
 model_urls = {
     'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
@@ -30,6 +30,11 @@ valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
                     cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+
+testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
+                         cfg.downscale, cfg.insize, cfg.train_transforms)
+testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
+                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 device = 'gpu'
 
 # Network Setup
