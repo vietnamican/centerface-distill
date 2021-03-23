@@ -24,5 +24,5 @@ class MobileNetTemperWrapper(TemperedModel):
             optimizer = torch.optim.Adam(params, lr=0.001,
                                          weight_decay=5e-4)
             lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=90)
+                optimizer, T_max=10)
             return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}

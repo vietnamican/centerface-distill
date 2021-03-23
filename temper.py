@@ -33,6 +33,9 @@ device = 'gpu'
 
 if __name__ == '__main__':
     mode = 'temper'
+    other_information = ''
+    if len(other_information) > 0:
+        mode = '{}_{}'.format(mode, other_information)
     config = configs[0]
     if mode == 'temper':
         log_name = 'centerface_logs/{}'.format(mode)
@@ -65,21 +68,21 @@ if __name__ == '__main__':
         model.orig.migrate(state_dict, force=True, verbose=2)
         if device == 'tpu':
             trainer = pl.Trainer(
-                max_epochs=90,
+                max_epochs=10,
                 logger=logger,
                 callbacks=callbacks,
                 tpu_cores=8
             )
         elif device == 'gpu':
             trainer = pl.Trainer(
-                max_epochs=90,
+                max_epochs=10,
                 logger=logger,
                 callbacks=callbacks,
                 gpus=1
             )
         else:
             trainer = pl.Trainer(
-                max_epochs=90,
+                max_epochs=10,
                 logger=logger,
                 callbacks=callbacks
             )
