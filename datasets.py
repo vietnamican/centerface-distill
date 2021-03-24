@@ -48,9 +48,10 @@ class WiderFace(Dataset, VisionKit):
         return len(self.annslist)
 
     def xywh2xyxy(self, bboxes):
-        bboxes[:, 2] += bboxes[:, 0]
-        bboxes[:, 3] += bboxes[:, 1]
-        return bboxes
+        _bboxes = bboxes.copy()
+        _bboxes[:, 2] += _bboxes[:, 0]
+        _bboxes[:, 3] += _bboxes[:, 1]
+        return _bboxes
 
     def preprocess(self, im, anns):
         bboxes = anns[:, :4]
@@ -163,15 +164,16 @@ class WiderFaceVal(Dataset, VisionKit):
         hm = self.make_heatmaps(im, bboxes, self.downscale)
         if self.transforms is not None:
             im = self.transforms(im)
-        return im, hm
+        return im, hm, self.namelist[idx], idx
 
     def __len__(self):
         return len(self.annslist)
 
     def xywh2xyxy(self, bboxes):
-        bboxes[:, 2] += bboxes[:, 0]
-        bboxes[:, 3] += bboxes[:, 1]
-        return bboxes
+        _bboxes = bboxes.copy()
+        _bboxes[:, 2] += _bboxes[:, 0]
+        _bboxes[:, 3] += _bboxes[:, 1]
+        return _bboxes
 
     def preprocess(self, im, anns):
         bboxes = anns[:, :4]

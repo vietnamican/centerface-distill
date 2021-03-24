@@ -37,7 +37,9 @@ class VisionKit:
             offset_y = (target_height - height_) // 2
         im = im.resize((width_, height_), Image.BILINEAR)
         canvas.paste(im, box=(offset_x, offset_y))
-
+        # print(scale)
+        # print(offset_x)
+        # print(offset_y)
         if bboxes is not None:
             bboxes = bboxes.copy()
             bboxes *= scale

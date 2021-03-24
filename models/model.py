@@ -59,7 +59,7 @@ class Model(MobileNetSeg):
         return loss
 
     def test_step(self, batch, batch_idx):
-        data, labels = batch
+        data, labels, *_ = batch
         out = self(data)
         heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
@@ -71,5 +71,10 @@ class Model(MobileNetSeg):
                        'size': l_wh}, prog_bar=False)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=5e-4)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.0005, weight_decay=5e-4)
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[90,120], gamma=0.1)
+        # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        #     optimizer, T_max=90)
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
+        # optimizer = optim.Adam(self.parameters(), lr=5e-4)
+        # return optimizer
