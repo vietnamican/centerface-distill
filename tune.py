@@ -35,7 +35,7 @@ testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                          cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
                          pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device = 'cpu'
+device = 'gpu'
 
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
@@ -54,15 +54,15 @@ net.migrate(net.wh.state_dict(), net.filter_state_dict_with_prefix(checkpoint, '
 net.migrate(net.off.state_dict(), net.filter_state_dict_with_prefix(checkpoint, 'off'), force=True, verbose=1)
 net.migrate(net.lm.state_dict(), net.filter_state_dict_with_prefix(checkpoint, 'lm'), force=True, verbose=1)
 
-checkpoint_path = 'temp.ckpt'
+checkpoint_path = 'config0_checkpoint-epoch=53-val_loss=2.8531.ckpt'
 if device == 'cpu' or device == 'tpu':
     checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
 else:
     checkpoint = torch.load(checkpoint_path)
-net.base.migrate(checkpoint, force=True, verbose=2)
+net.base.migrate(checkpoint, force=True, verbose=1)
 
 
-log_name = 'centerface_logs/tuning'
+log_name = 'centerface_logs/tuning_vgg_vggblocktemper1'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,
@@ -100,4 +100,4 @@ else:
         callbacks=callbacks
     )
 
-# trainer.fit(net, trainloader, valloader)
+trainer.fit(net, trainloader, valloader)
