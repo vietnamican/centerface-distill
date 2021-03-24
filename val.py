@@ -15,20 +15,22 @@ from datasets import WiderFace, WiderFaceVal
 
 testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                            cfg.downscale, cfg.insize, cfg.train_transforms)
-testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
+testloader = DataLoader(testdataset, batch_size=4,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 device = 'cpu'
 
-checkpoint_path = 'checkpoints/final.pth'
+# checkpoint_path = 'checkpoints/final.pth'
+checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=89-val_loss=0.0586.ckpt'
 if device == 'cpu' or device == 'tpu':
     checkpoint = torch.load(
         checkpoint_path, map_location=lambda storage, loc: storage)
 else:
     checkpoint = torch.load(checkpoint_path)
-# state_dict = checkpoint['state_dict']
-state_dict = checkpoint
+state_dict = checkpoint['state_dict']
+# state_dict = checkpoint
 
 net = Model(MobileNetV2)
+net.eval()
 net.migrate(state_dict, force=True, verbose=2)
 
 log_name = 'centerface_logs/val'
@@ -65,7 +67,8 @@ else:
     trainer = pl.Trainer(
         max_epochs=90,
         logger=logger,
-        callbacks=callbacks
+        callbacks=callbacks,
+        limit_test_batches=0.1
     )
 
 trainer.test(net, testloader)
