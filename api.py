@@ -9,7 +9,7 @@ from PIL import Image
 
 # local imports
 from config import Config as cfg
-from models.mobilenetv2 import MobileNetV2
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlockTemper1
 from models.model import Model
 from utils import VisionKit
 from datasets import WiderFace, WiderFaceVal
@@ -30,7 +30,7 @@ recall = AverageMetric()
 #     return net
 
 device = 'cpu'
-checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=89-val_loss=0.0586.ckpt'
+checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
 # checkpoint_path = 'checkpoints/final.pth'
 if device == 'cpu':
     checkpoint = torch.load(
@@ -40,9 +40,10 @@ else:
 state_dict = checkpoint['state_dict']
 # state_dict = checkpoint
 
-net = Model(MobileNetV2)
+net = Model(MobileNetV2VGGBlockTemper1)
 net.eval()
 net.migrate(state_dict, force=True, verbose=1)
+net.release()
 
 
 def iou(box1, box2):
@@ -215,8 +216,8 @@ def calculate_metrics(pred_bboxes, gt_bboxes):
             gt_index.append(closest_index)
     return result, pred_index, gt_index
 
-if not os.path.isdir('result3'):
-    os.mkdir('result3')
+if not os.path.isdir('result189'):
+    os.mkdir('result189')
 
 if __name__ == '__main__':
     # i = 0
@@ -244,7 +245,7 @@ if __name__ == '__main__':
             # print(result, len(gt_bboxes))
             precision.update(result, len(bboxes))
             recall.update(result, len(gt_bboxes))
-            # visualize(im, bboxes, landmarks, imname)
+            visualize(im, bboxes, landmarks, imname)
         except:
             pass
     print(precision.compute())
@@ -258,4 +259,7 @@ orig
 tempered
     precision: 0.3428
     recall: 0.3156
+tempered-vggblocktemper1:
+    precision: 0.5312
+    recall: 0.3150
 """

@@ -78,3 +78,12 @@ class Model(MobileNetSeg):
         return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
         # optimizer = optim.Adam(self.parameters(), lr=5e-4)
         # return optimizer
+
+    def release(self):
+        is_self = True
+        for module in self.modules():
+            if is_self:
+                is_self = False
+                continue
+            if hasattr(module, 'release'):
+                module.release()

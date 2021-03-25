@@ -88,8 +88,8 @@ class VisionKit:
                 for i in range(0, len(landmark), skip):
                     x, y = int(landmark[i]), int(landmark[i+1])
                     handle.ellipse([x-1, y-1, x+1, y+1], fill=(0,127,0), width=1)
-        im.show()
-        im.save('result3/{}'.format(name))
+        # im.show()
+        im.save('result189/{}'.format(name))
         return im
 
     @staticmethod
