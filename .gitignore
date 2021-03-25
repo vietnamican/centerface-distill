@@ -8,3 +8,4 @@ __pycache__
 *_logs/
 *.ckpt
 *.pt
+result*/

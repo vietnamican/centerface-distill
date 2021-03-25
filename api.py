@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
@@ -29,19 +30,19 @@ recall = AverageMetric()
 #     return net
 
 device = 'cpu'
-# checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=66-val_loss=0.0583.ckpt'
-checkpoint_path = 'checkpoints/final.pth'
+checkpoint_path = 'centerface_logs/training/version_0/checkpoints/checkpoint-epoch=89-val_loss=0.0586.ckpt'
+# checkpoint_path = 'checkpoints/final.pth'
 if device == 'cpu':
     checkpoint = torch.load(
         checkpoint_path, map_location=lambda storage, loc: storage)
 else:
     checkpoint = torch.load(checkpoint_path)
-# state_dict = checkpoint['state_dict']
-state_dict = checkpoint
+state_dict = checkpoint['state_dict']
+# state_dict = checkpoint
 
 net = Model(MobileNetV2)
 net.eval()
-net.migrate(state_dict, force=True, verbose=2)
+net.migrate(state_dict, force=True, verbose=1)
 
 
 def iou(box1, box2):
@@ -181,11 +182,10 @@ def decode(out):
         return bboxes, landmarks
     keep_indexes = nms(bboxes, scores, 0.4)
     return bboxes[keep_indexes], landmarks[keep_indexes]
-    # return bboxes, landmarks
 
 
-def visualize(im, bboxes, landmarks):
-    return VisionKit.visualize(im, bboxes, landmarks, skip=2)
+def visualize(im, bboxes, landmarks, name):
+    return VisionKit.visualize(im, bboxes, landmarks, skip=2, name=name)
 
 
 def manhattan_distance(box1, box2):
@@ -194,41 +194,68 @@ def manhattan_distance(box1, box2):
     return abs(center1[0] - center2[0]) + abs(center1[1] - center2[1])
 
 def calculate_metrics(pred_bboxes, gt_bboxes):
-    iou_threshold = 0.2
+    iou_threshold = 0.4
     is_occupied = [False]*gt_bboxes.shape[0]
+    pred_index = []
+    gt_index = []
     result = 0
     for i, pred_box in enumerate(pred_bboxes):
-        min_distance = 1000
+        max_iou = 0
         for j, gt_box in enumerate(gt_bboxes):
-            if not is_occupied[j] and manhattan_distance(pred_box, gt_box) < min_distance:
-                closest_index = j
-        if iou(pred_box, gt_bboxes[closest_index]) > iou_threshold:
+
+            if not is_occupied[j]:
+                iou_distance = iou(pred_box, gt_box) 
+                if iou_distance > max_iou:
+                    closest_index = j
+                    max_iou = iou_distance
+        if max_iou > iou_threshold:
             result += 1
             is_occupied[closest_index] = True
-    return result
+            pred_index.append(i)
+            gt_index.append(closest_index)
+    return result, pred_index, gt_index
+
+if not os.path.isdir('result3'):
+    os.mkdir('result3')
 
 if __name__ == '__main__':
-    i = 0
-    for im, labels, impath, idx in testloader:
-        i += 1
-        if i == 10:
-            break
-        impath = impath[0]
-        impath = osp.join('data', 'WIDER_val', 'images', impath)
-        gt_bboxes = np.array(testdataset.annslist[idx])
-        im = Image.open(impath)
-        new_im, params = preprocess(im)
-        pred = detect(new_im)
-        bboxes, landmarks = decode(pred)
-        bboxes, landmarks = postprocess(bboxes, landmarks, params)
-        gt_bboxes[:, 2] += gt_bboxes[:, 0]
-        gt_bboxes[:, 3] += gt_bboxes[:, 1]
-        # print(bboxes)
-        # print(gt_bboxes)
-        result = calculate_metrics(bboxes, gt_bboxes)
-        # print(result)
-    #     precision.update(result, len(bboxes))
-    #     recall.update(result, len(gt_bboxes))
-    # print(precision.compute())
-    # print(recall.compute())
-        visualize(im, bboxes, landmarks)
+    # i = 0
+    for im, labels, imname, idx in tqdm(testloader):
+        try:
+            # i += 1
+            # if i == 10:
+            #     break
+            imname = imname[0]
+            # idx = 6
+            # imname = '0--Parade/0_Parade_Parade_0_470.jpg'
+            impath = osp.join('data', 'WIDER_val', 'images', imname)
+            imname = imname.split('/')[-1]
+            gt_bboxes = np.array(testdataset.annslist[idx])
+            gt_bboxes[:, 2] += gt_bboxes[:, 0]
+            gt_bboxes[:, 3] += gt_bboxes[:, 1]
+
+            im = Image.open(impath)
+            new_im, params = preprocess(im)
+            pred = detect(new_im)
+            bboxes, landmarks = decode(pred)
+            bboxes, landmarks = postprocess(bboxes, landmarks, params)
+            result, pred_index, gt_index = calculate_metrics(bboxes, gt_bboxes)
+            # print(result, len(bboxes))
+            # print(result, len(gt_bboxes))
+            precision.update(result, len(bboxes))
+            recall.update(result, len(gt_bboxes))
+            # visualize(im, bboxes, landmarks, imname)
+        except:
+            pass
+    print(precision.compute())
+    print(recall.compute())
+
+
+"""
+orig
+    precision: 0.5128
+    recall: 0.3194
+tempered
+    precision: 0.3428
+    recall: 0.3156
+"""
