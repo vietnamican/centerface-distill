@@ -29,21 +29,21 @@ recall = AverageMetric()
 #     net.eval()
 #     return net
 
-device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
-# checkpoint_path = 'checkpoints/final.pth'
-if device == 'cpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-# state_dict = checkpoint
+# device = 'cpu'
+# checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
+# # checkpoint_path = 'checkpoints/final.pth'
+# if device == 'cpu':
+#     checkpoint = torch.load(
+#         checkpoint_path, map_location=lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+# # state_dict = checkpoint
 
-net = Model(MobileNetV2VGGBlockTemper1)
-net.eval()
-net.migrate(state_dict, force=True, verbose=1)
-net.release()
+# net = Model(MobileNetV2VGGBlockTemper1)
+# net.eval()
+# net.migrate(state_dict, force=True, verbose=1)
+# net.release()
 
 
 def iou(box1, box2):
@@ -125,7 +125,7 @@ def postprocess(bboxes, landmarks, params):
     return bboxes, landmarks
 
 
-def detect(im):
+def detect(net, im):
     data = cfg.test_transforms(im)
     data = data[None, ...]
     with torch.no_grad():
@@ -237,7 +237,7 @@ if __name__ == '__main__':
 
             im = Image.open(impath)
             new_im, params = preprocess(im)
-            pred = detect(new_im)
+            pred = detect(net, new_im)
             bboxes, landmarks = decode(pred)
             bboxes, landmarks = postprocess(bboxes, landmarks, params)
             result, pred_index, gt_index = calculate_metrics(bboxes, gt_bboxes)
