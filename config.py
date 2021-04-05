@@ -4,7 +4,7 @@ from torchvision import transforms as T
 
 class Config:
     # preprocess
-    insize = [416, 416]
+    insize = [800, 800]
     channels = 3
     downscale = 4
     sigma = 2.65
@@ -12,22 +12,24 @@ class Config:
     train_transforms = T.Compose([
         T.ColorJitter(0.5, 0.5, 0.5, 0.5),
         T.ToTensor(),
-        T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
+        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
     ])
 
     test_transforms = T.Compose([
         T.ToTensor(),
-        T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
+        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
     ])
 
     # dataset
-    # dataroot = '/content/WIDER_train/images'
-    # annfile = '/content/retinaface_gt_v1.1/train/label.txt'
-    dataroot = 'data/WIDER_train/images'
-    annfile = 'data/retinaface_gt_v1.1/train/label.txt'
+    dataroot = '/content/WIDER_train/images'
+    annfile = '/content/retinaface_gt_v1.1/train/label.txt'
+    # dataroot = 'data/WIDER_train/images'
+    # annfile = 'data/retinaface_gt_v1.1/train/label.txt'
 
-    valdataroot = 'data/WIDER_val/images'
-    valannfile = 'data/retinaface_gt_v1.1/val/label.txt'
+    # valdataroot = 'data/WIDER_val/images'
+    # valannfile = 'data/retinaface_gt_v1.1/val/label.txt'
+    valdataroot = '/content/WIDER_val/images'
+    valannfile = '/content/retinaface_gt_v1.1/val/label.txt'
 
     # checkpoints
     checkpoints = 'checkpoints'
@@ -37,7 +39,7 @@ class Config:
     # training
     epoch = 90
     lr = 5e-4
-    batch_size = 24
+    batch_size = 32
     pin_memory = True
     num_workers = 4
     device = 'cuda' if torch.cuda.is_available() else 'cpu'

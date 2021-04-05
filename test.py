@@ -15,23 +15,23 @@ from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace, WiderFaceVal
 
+
 torch.set_grad_enabled(False)
 
 device = 'cpu'
-checkpoint_path = 'checkpoints/checkpoint-epoch=93-val_loss=0.0497.ckpt'
-# checkpoint_path = 'checkpoints/final.pth'
+# checkpoint_path = 'centerface_logs/tuning_vgg_vggblocktemper1/version_2/checkpoints/checkpoint-epoch=139-val_loss=0.0515.ckpt'
+checkpoint_path = 'checkpoints/final.pth'
 if device == 'cpu':
     checkpoint = torch.load(
         checkpoint_path, map_location=lambda storage, loc: storage)
 else:
     checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-# state_dict = checkpoint
+# state_dict = checkpoint['state_dict']
+state_dict = checkpoint
 
 # net = Model(MobileNetV2VGGBlockTemper1)
 net = Model(MobileNetV2Dense)
 # net = Model(MobileNetV2)
-net.eval()
 # net.migrate(state_dict, force=True, verbose=2)
 # net.release()
 # net.eval()

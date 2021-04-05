@@ -11,7 +11,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from config import Config as cfg
 from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2
-from datasets import WiderFace, WiderFaceVal
+from datasets import WiderFace
 
 model_urls = {
     'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
@@ -22,20 +22,20 @@ state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
 
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
+                    cfg.downscale, cfg.insize, cfg.train_transforms, 'easy')
 trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
 valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
+                    cfg.downscale, cfg.insize, cfg.test_transforms, 'easy')
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
-testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
-                         cfg.downscale, cfg.insize, cfg.train_transforms)
+testdataset = WiderFace(cfg.valdataroot, cfg.valannfile, cfg.sigma,
+                         cfg.downscale, cfg.insize, cfg.test_transforms, 'easy')
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
                          pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device = 'cpu'
+device = 'gpu'
 
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
@@ -43,14 +43,7 @@ device = 'cpu'
 net = Model(MobileNetV2)
 net.base.migrate(state_dict, force=True, verbose=2)
 
-# Training Setup
-# optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
-# heatmap_loss = nn.MSELoss()
-# wh_loss = RegLoss()
-# off_loss = RegLoss()
-# lm_loss = RegLoss()
-
-log_name = 'centerface_logs/training'
+log_name = 'centerface_logs/800/training'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,
@@ -69,23 +62,24 @@ callbacks = [loss_callback]
 
 if device == 'tpu':
     trainer = pl.Trainer(
-        max_epochs=90,
+        max_epochs=140,
         logger=logger,
         callbacks=callbacks,
         tpu_cores=8
     )
 elif device == 'gpu':
     trainer = pl.Trainer(
-        max_epochs=90,
+        max_epochs=140,
         logger=logger,
         callbacks=callbacks,
-        gpus=1
+        gpus=1,
+        precision=16
     )
 else:
     trainer = pl.Trainer(
-        max_epochs=90,
+        max_epochs=140,
         logger=logger,
         callbacks=callbacks
     )
 
-trainer.fit(net, trainloader, valloader)
+trainer.fit(net, trainloader, testloader)

@@ -16,17 +16,18 @@ torch.set_grad_enabled(False)
 
 def load_model():
     device = 'cpu'
-    checkpoint_path = 'checkpoints/checkpoint-epoch=93-val_loss=0.0497.ckpt'
-    # checkpoint_path = 'checkpoints/final.pth'
+    # checkpoint_path = 'centerface_logs/tuning_vgg_vggblocktemper1/version_2/checkpoints/checkpoint-epoch=139-val_loss=0.0515.ckpt'
+    checkpoint_path = 'checkpoints/final.pth'
     if device == 'cpu':
         checkpoint = torch.load(
             checkpoint_path, map_location=lambda storage, loc: storage)
     else:
         checkpoint = torch.load(checkpoint_path)
-    state_dict = checkpoint['state_dict']
-    # state_dict = checkpoint
+    # state_dict = checkpoint['state_dict']
+    state_dict = checkpoint
 
-    net = Model(MobileNetV2VGGBlockTemper1)
+    # net = Model(MobileNetV2VGGBlockTemper1)
+    net = Model(MobileNetV2)
     net.eval()
     net.migrate(state_dict, force=True, verbose=1)
     net.release()
@@ -37,7 +38,7 @@ def load_model():
 def draw_box(net, frame):
     # print(frame.shape)
     image = Image.fromarray(frame)
-    new_im, params = preprocess(image)
+    new_im, params = preprocess(image, [416, 416])
     pred = detect(net, new_im)
     bboxes, landmarks = decode(pred)
     new_im = np.array(new_im)

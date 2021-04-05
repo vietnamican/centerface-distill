@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 from tqdm import tqdm
+from time import time
 
 import torch
 from torch.utils.data import DataLoader
@@ -114,8 +115,8 @@ def nms(boxes, scores, nms_thresh):
     return keep
 
 
-def preprocess(im):
-    new_im, _, _, *params = VisionKit.letterbox(im, cfg.insize)
+def preprocess(im, size=cfg.insize):
+    new_im, _, _, *params = VisionKit.letterbox(im, size)
     return new_im, params
 
 
@@ -128,8 +129,11 @@ def postprocess(bboxes, landmarks, params):
 def detect(net, im):
     data = cfg.test_transforms(im)
     data = data[None, ...]
+    start = time()
     # with torch.no_grad():
     out = net(data)
+    stop = time()
+    print('model time: {}'.format(stop -start))
     return out[0]
 
 
