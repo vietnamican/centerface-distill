@@ -21,15 +21,15 @@ class Config:
     ])
 
     # dataset
-    dataroot = '/content/WIDER_train/images'
-    annfile = '/content/retinaface_gt_v1.1/train/label.txt'
-    # dataroot = 'data/WIDER_train/images'
-    # annfile = 'data/retinaface_gt_v1.1/train/label.txt'
+    # dataroot = '/content/WIDER_train/images'
+    # annfile = '/content/retinaface_gt_v1.1/train/label.txt'
+    dataroot = 'data/WIDER_train/images'
+    annfile = 'data/retinaface_gt_v1.1/train/label.txt'
 
-    # valdataroot = 'data/WIDER_val/images'
-    # valannfile = 'data/retinaface_gt_v1.1/val/label.txt'
-    valdataroot = '/content/WIDER_val/images'
-    valannfile = '/content/retinaface_gt_v1.1/val/label.txt'
+    valdataroot = 'data/WIDER_val/images'
+    valannfile = 'data/retinaface_gt_v1.1/val/label.txt'
+    # valdataroot = '/content/WIDER_val/images'
+    # valannfile = '/content/retinaface_gt_v1.1/val/label.txt'
 
     # checkpoints
     checkpoints = 'checkpoints'

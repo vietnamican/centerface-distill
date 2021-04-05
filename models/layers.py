@@ -76,14 +76,23 @@ class InvertedDenseResidual(nn.Module):
         if expand_ratio != 1:
             # pw
             layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=3))
-        layers.extend([
-            # dw
-            ConvBNReLU(hidden_dim, hidden_dim,
-                       stride=stride, groups=hidden_dim),
-            # pw-linear
-            nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
-            nn.BatchNorm2d(oup),
-        ])
+            layers.extend([
+                # dw
+                ConvBNReLU(hidden_dim, hidden_dim,
+                            stride=stride, groups=hidden_dim),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            ])
+        else:
+            layers.extend([
+                # dw
+                ConvBNReLU(hidden_dim, hidden_dim,
+                            stride=stride),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            ])
         self.conv = nn.Sequential(*layers)
 
     def forward(self, x):
