@@ -1,4 +1,4 @@
-from .mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1
+from .mobilenetv2 import MobileNetV2, MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, MobileNetV2Dense
 from .mobilenet_temper_wrapper import MobileNetTemperWrapper
 
 configs = []

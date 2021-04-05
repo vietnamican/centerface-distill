@@ -128,8 +128,8 @@ def postprocess(bboxes, landmarks, params):
 def detect(net, im):
     data = cfg.test_transforms(im)
     data = data[None, ...]
-    with torch.no_grad():
-        out = net(data)
+    # with torch.no_grad():
+    out = net(data)
     return out[0]
 
 
