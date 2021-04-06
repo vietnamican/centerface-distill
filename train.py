@@ -13,6 +13,7 @@ from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace, WiderFaceVal
 
+
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
                     cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
@@ -28,7 +29,7 @@ testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                          cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
                          pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device='cpu'
+device = 'cpu'
 
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
@@ -36,7 +37,14 @@ device='cpu'
 net = Model(MobileNetV2Dense)
 # net.base.migrate(state_dict, force=True, verbose=2)
 
-log_name = 'centerface_logs/dense/training'
+# Training Setup
+# optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
+# heatmap_loss = nn.MSELoss()
+# wh_loss = RegLoss()
+# off_loss = RegLoss()
+# lm_loss = RegLoss()
+
+log_name = 'centerface_logs/training'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,
@@ -55,22 +63,21 @@ callbacks = [loss_callback]
 
 if device == 'tpu':
     trainer = pl.Trainer(
-        max_epochs=140,
+        max_epochs=90,
         logger=logger,
         callbacks=callbacks,
         tpu_cores=8
     )
 elif device == 'gpu':
     trainer = pl.Trainer(
-        max_epochs=140,
+        max_epochs=90,
         logger=logger,
         callbacks=callbacks,
-        gpus=1,
-        precision=16
+        gpus=1
     )
 else:
     trainer = pl.Trainer(
-        max_epochs=140,
+        max_epochs=90,
         logger=logger,
         callbacks=callbacks
     )

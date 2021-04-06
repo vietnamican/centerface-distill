@@ -9,13 +9,13 @@ from PIL import Image
 
 # local imports
 from config import Config as cfg
-from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlockTemper1, MobileNetV2Dense
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlockTemper1
 from models.model import Model
 from utils import VisionKit
-from datasets import WiderFace
+from datasets import WiderFace, WiderFaceVal
 from models.loss import AverageMetric
 
-testdataset = WiderFace(cfg.valdataroot, cfg.valannfile, cfg.sigma,
+testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                            cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=1,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
@@ -29,21 +29,21 @@ recall = AverageMetric()
 #     net.eval()
 #     return net
 
-device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=05-val_loss=0.0656.ckpt'
-# checkpoint_path = 'checkpoints/final.pth'
-if device == 'cpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-# state_dict = checkpoint
+# device = 'cpu'
+# checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
+# # checkpoint_path = 'checkpoints/final.pth'
+# if device == 'cpu':
+#     checkpoint = torch.load(
+#         checkpoint_path, map_location=lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+# # state_dict = checkpoint
 
-net = Model(MobileNetV2VGGBlockTemper1)
-net.eval()
-net.migrate(state_dict, force=True, verbose=1)
-net.release()
+# net = Model(MobileNetV2VGGBlockTemper1)
+# net.eval()
+# net.migrate(state_dict, force=True, verbose=1)
+# net.release()
 
 
 def iou(box1, box2):
@@ -119,10 +119,10 @@ def preprocess(im):
     return new_im, params
 
 
-def postprocess(bboxes, params):
-    bboxes, _ = VisionKit.letterbox_inverse(
-        *params, bboxes, skip=2)
-    return bboxes
+def postprocess(bboxes, landmarks, params):
+    bboxes, landmarks = VisionKit.letterbox_inverse(
+        *params, bboxes, landmarks, skip=2)
+    return bboxes, landmarks
 
 
 def detect(net, im):
@@ -137,16 +137,19 @@ def decode(out):
     hm = out['hm']
     wh = out['wh']
     off = out['off']
+    lm = out['lm']
     hm = VisionKit.nms(hm, kernel=3)
     hm.squeeze_()
     off.squeeze_()
     wh.squeeze_()
+    lm.squeeze_()
 
     hm = hm.numpy()
     hm[hm < cfg.threshold] = 0
     xs, ys = np.nonzero(hm)
     bboxes = []
     scores = []
+    landmarks = []
     for x, y in zip(xs, ys):
         ow = off[0][x, y]
         oh = off[1][x, y]
@@ -165,16 +168,25 @@ def decode(out):
         bboxes.append([left, top, right, bottom])
         scores.append(hm[x, y])
 
-        
+        # landmark
+        lms = []
+        for i in range(0, 10, 2):
+            lm_x = lm[i][x, y]
+            lm_y = lm[i+1][x, y]
+            lm_x = lm_x * width + left
+            lm_y = lm_y * height + top
+            lms += [lm_x, lm_y]
+        landmarks.append(lms)
     bboxes = np.array(bboxes)
+    landmarks = np.array(landmarks)
     if len(bboxes) == 0:
-        return bboxes
+        return bboxes, landmarks
     keep_indexes = nms(bboxes, scores, 0.4)
-    return bboxes[keep_indexes]
+    return bboxes[keep_indexes], landmarks[keep_indexes]
 
 
-def visualize(im, bboxes, name):
-    return VisionKit.visualize(im, bboxes, skip=2, name=name)
+def visualize(im, bboxes, landmarks, name):
+    return VisionKit.visualize(im, bboxes, landmarks, skip=2, name=name)
 
 
 def manhattan_distance(box1, box2):
@@ -204,8 +216,8 @@ def calculate_metrics(pred_bboxes, gt_bboxes):
             gt_index.append(closest_index)
     return result, pred_index, gt_index
 
-if not os.path.isdir('resultdense'):
-    os.mkdir('resultdense')
+if not os.path.isdir('result189'):
+    os.mkdir('result189')
 
 if __name__ == '__main__':
     # i = 0
@@ -226,14 +238,14 @@ if __name__ == '__main__':
             im = Image.open(impath)
             new_im, params = preprocess(im)
             pred = detect(net, new_im)
-            bboxes = decode(pred)
-            bboxes = postprocess(bboxes, params)
+            bboxes, landmarks = decode(pred)
+            bboxes, landmarks = postprocess(bboxes, landmarks, params)
             result, pred_index, gt_index = calculate_metrics(bboxes, gt_bboxes)
             # print(result, len(bboxes))
             # print(result, len(gt_bboxes))
             precision.update(result, len(bboxes))
             recall.update(result, len(gt_bboxes))
-            visualize(im, bboxes, imname)
+            visualize(im, bboxes, landmarks, imname)
         except:
             pass
     print(precision.compute())
@@ -251,4 +263,3 @@ tempered-vggblocktemper1:
     precision: 0.5312
     recall: 0.3150
 """
-

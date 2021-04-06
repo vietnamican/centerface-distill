@@ -16,18 +16,17 @@ torch.set_grad_enabled(False)
 
 def load_model():
     device = 'cpu'
-    # checkpoint_path = 'centerface_logs/tuning_vgg_vggblocktemper1/version_2/checkpoints/checkpoint-epoch=139-val_loss=0.0515.ckpt'
-    checkpoint_path = 'checkpoints/final.pth'
+    checkpoint_path = 'centerface_logs/tuning_vgg_vggblocktemper1/version_2/checkpoints/checkpoint-epoch=139-val_loss=0.0515.ckpt'
+    # checkpoint_path = 'checkpoints/final.pth'
     if device == 'cpu':
         checkpoint = torch.load(
             checkpoint_path, map_location=lambda storage, loc: storage)
     else:
         checkpoint = torch.load(checkpoint_path)
-    # state_dict = checkpoint['state_dict']
-    state_dict = checkpoint
+    state_dict = checkpoint['state_dict']
+    # state_dict = checkpoint
 
-    # net = Model(MobileNetV2VGGBlockTemper1)
-    net = Model(MobileNetV2)
+    net = Model(MobileNetV2VGGBlockTemper1)
     net.eval()
     net.migrate(state_dict, force=True, verbose=1)
     net.release()
@@ -38,7 +37,7 @@ def load_model():
 def draw_box(net, frame):
     # print(frame.shape)
     image = Image.fromarray(frame)
-    new_im, params = preprocess(image, [416, 416])
+    new_im, params = preprocess(image)
     pred = detect(net, new_im)
     bboxes, landmarks = decode(pred)
     new_im = np.array(new_im)
@@ -55,17 +54,13 @@ if __name__ == "__main__":
     # define a video capture object
     vid = cv2.VideoCapture(0)
     net = load_model()
+    start = time()
     while(True):
         
         # Capture the video frame
         # by frame
-        start_frame = time()
         ret, frame = vid.read()
-        end_frame = time()
-        start_draw = time()
         frame = draw_box(net, frame)
-        end_draw = time()
-        start_show = time()
         frame = np.array(frame, dtype=np.uint8)
     
         # Display the resulting frame
@@ -76,12 +71,9 @@ if __name__ == "__main__":
         # desired button of your choice
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        end_show = time()
-        t_capture = end_frame-start_frame
-        t_draw = end_draw-start_draw
-        t_show = end_show-start_show
-        print('t.capture: {:.4f}, t.draw: {:.4f}, t.show: {:.4f}'.format(t_capture, t_draw, t_show))
-        print('time {:.4f} vs {:.4f}'.format(t_capture + t_draw + t_show, end_show - start_frame))
+        stop = time()
+        print(stop - start)
+        start = stop
     # After the loop release the cap object
     vid.release()
     # Destroy all the windows

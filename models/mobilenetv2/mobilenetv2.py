@@ -53,6 +53,7 @@ class MobileNetV2(Base):
         y.append(self.feature_6(x))
         return y
 
+
 class MobileNetV2Dense(Base):
     def __init__(self, width_mult=1.0, round_nearest=8,):
         super().__init__()

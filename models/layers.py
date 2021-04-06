@@ -63,6 +63,7 @@ class InvertedResidual(nn.Module):
         else:
             return self.conv(x)
 
+
 class InvertedDenseResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio):
         super().__init__()
@@ -79,7 +80,7 @@ class InvertedDenseResidual(nn.Module):
             layers.extend([
                 # dw
                 ConvBNReLU(hidden_dim, hidden_dim,
-                            stride=stride, groups=hidden_dim),
+                           stride=stride, groups=hidden_dim),
                 # pw-linear
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(oup),
@@ -88,7 +89,7 @@ class InvertedDenseResidual(nn.Module):
             layers.extend([
                 # dw
                 ConvBNReLU(hidden_dim, hidden_dim,
-                            stride=stride),
+                           stride=stride),
                 # pw-linear
                 nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
                 nn.BatchNorm2d(oup),

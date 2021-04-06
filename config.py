@@ -12,12 +12,12 @@ class Config:
     train_transforms = T.Compose([
         T.ColorJitter(0.5, 0.5, 0.5, 0.5),
         T.ToTensor(),
-        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
     ])
 
     test_transforms = T.Compose([
         T.ToTensor(),
-        T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
     ])
 
     # dataset
@@ -28,8 +28,6 @@ class Config:
 
     valdataroot = 'data/WIDER_val/images'
     valannfile = 'data/retinaface_gt_v1.1/val/label.txt'
-    # valdataroot = '/content/WIDER_val/images'
-    # valannfile = '/content/retinaface_gt_v1.1/val/label.txt'
 
     # checkpoints
     checkpoints = 'checkpoints'
