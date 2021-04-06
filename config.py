@@ -4,7 +4,7 @@ from torchvision import transforms as T
 
 class Config:
     # preprocess
-    insize = [800, 800]
+    insize = [416, 416]
     channels = 3
     downscale = 4
     sigma = 2.65

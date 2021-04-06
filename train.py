@@ -11,24 +11,24 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from config import Config as cfg
 from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2, MobileNetV2Dense
-from datasets import WiderFace
+from datasets import WiderFace, WiderFaceVal
 
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.train_transforms, 'easy')
+                    cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
 trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
 valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.test_transforms, 'easy')
+                    cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
-testdataset = WiderFace(cfg.valdataroot, cfg.valannfile, cfg.sigma,
-                         cfg.downscale, cfg.insize, cfg.test_transforms, 'easy')
+testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
+                         cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
                          pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device = 'cpu'
+device='cpu'
 
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
@@ -75,4 +75,4 @@ else:
         callbacks=callbacks
     )
 
-trainer.fit(net, trainloader, testloader)
+trainer.fit(net, trainloader, valloader)
