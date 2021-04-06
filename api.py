@@ -1,25 +1,21 @@
 import os
 import os.path as osp
 from tqdm import tqdm
-from time import time
 
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
 from PIL import Image
-from convbnmerge import merge
 
 # local imports
 from config import Config as cfg
-from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlockTemper1, MobileNetV2Dense
+from models.mobilenetv2 import MobileNetV2, MobileNetV2VGGBlockTemper1
 from models.model import Model
 from utils import VisionKit
-from datasets import WiderFace
+from datasets import WiderFace, WiderFaceVal
 from models.loss import AverageMetric
 
-torch.set_grad_enabled(False)
-
-testdataset = WiderFace(cfg.valdataroot, cfg.valannfile, cfg.sigma,
+testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                            cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=1,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
@@ -33,22 +29,21 @@ recall = AverageMetric()
 #     net.eval()
 #     return net
 
-device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=32-val_loss=0.0590.ckpt'
-# checkpoint_path = 'checkpoints/final.pth'
-if device == 'cpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-# state_dict = checkpoint
+# device = 'cpu'
+# checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
+# # checkpoint_path = 'checkpoints/final.pth'
+# if device == 'cpu':
+#     checkpoint = torch.load(
+#         checkpoint_path, map_location=lambda storage, loc: storage)
+# else:
+#     checkpoint = torch.load(checkpoint_path)
+# state_dict = checkpoint['state_dict']
+# # state_dict = checkpoint
 
-net = Model(MobileNetV2Dense)
-net.eval()
-net.migrate(state_dict, force=True, verbose=1)
-net.release()
-merge(net)
+# net = Model(MobileNetV2VGGBlockTemper1)
+# net.eval()
+# net.migrate(state_dict, force=True, verbose=1)
+# net.release()
 
 
 def iou(box1, box2):
@@ -119,25 +114,22 @@ def nms(boxes, scores, nms_thresh):
     return keep
 
 
-def preprocess(im, size=cfg.insize):
-    new_im, _, _, *params = VisionKit.letterbox(im, size)
+def preprocess(im):
+    new_im, _, _, *params = VisionKit.letterbox(im, cfg.insize)
     return new_im, params
 
 
-def postprocess(bboxes, params):
-    bboxes = VisionKit.letterbox_inverse(
-        *params, bboxes, skip=2)
-    return bboxes
+def postprocess(bboxes, landmarks, params):
+    bboxes, landmarks = VisionKit.letterbox_inverse(
+        *params, bboxes, landmarks, skip=2)
+    return bboxes, landmarks
 
 
 def detect(net, im):
     data = cfg.test_transforms(im)
     data = data[None, ...]
-    start = time()
-    # with torch.no_grad():
-    out = net(data)
-    stop = time()
-    print('model time: {}'.format(stop -start))
+    with torch.no_grad():
+        out = net(data)
     return out[0]
 
 
@@ -145,15 +137,19 @@ def decode(out):
     hm = out['hm']
     wh = out['wh']
     off = out['off']
+    lm = out['lm']
     hm = VisionKit.nms(hm, kernel=3)
     hm.squeeze_()
     off.squeeze_()
     wh.squeeze_()
+    lm.squeeze_()
+
     hm = hm.numpy()
     hm[hm < cfg.threshold] = 0
     xs, ys = np.nonzero(hm)
     bboxes = []
     scores = []
+    landmarks = []
     for x, y in zip(xs, ys):
         ow = off[0][x, y]
         oh = off[1][x, y]
@@ -172,11 +168,21 @@ def decode(out):
         bboxes.append([left, top, right, bottom])
         scores.append(hm[x, y])
 
+        # landmark
+        lms = []
+        for i in range(0, 10, 2):
+            lm_x = lm[i][x, y]
+            lm_y = lm[i+1][x, y]
+            lm_x = lm_x * width + left
+            lm_y = lm_y * height + top
+            lms += [lm_x, lm_y]
+        landmarks.append(lms)
     bboxes = np.array(bboxes)
+    landmarks = np.array(landmarks)
     if len(bboxes) == 0:
-        return bboxes
+        return bboxes, landmarks
     keep_indexes = nms(bboxes, scores, 0.4)
-    return bboxes[keep_indexes]
+    return bboxes[keep_indexes], landmarks[keep_indexes]
 
 
 def visualize(im, bboxes, landmarks, name):
@@ -210,13 +216,13 @@ def calculate_metrics(pred_bboxes, gt_bboxes):
             gt_index.append(closest_index)
     return result, pred_index, gt_index
 
-if not os.path.isdir('resultdense'):
-    os.mkdir('resultdense')
+if not os.path.isdir('result189'):
+    os.mkdir('result189')
 
 if __name__ == '__main__':
     # i = 0
     for im, labels, imname, idx in tqdm(testloader):
-        # try:
+        try:
             # i += 1
             # if i == 10:
             #     break
@@ -232,18 +238,16 @@ if __name__ == '__main__':
             im = Image.open(impath)
             new_im, params = preprocess(im)
             pred = detect(net, new_im)
-            bboxes = decode(pred)
-            print(imname)
-            bboxes = postprocess(bboxes, params)
+            bboxes, landmarks = decode(pred)
+            bboxes, landmarks = postprocess(bboxes, landmarks, params)
             result, pred_index, gt_index = calculate_metrics(bboxes, gt_bboxes)
             # print(result, len(bboxes))
             # print(result, len(gt_bboxes))
             precision.update(result, len(bboxes))
             recall.update(result, len(gt_bboxes))
-            visualize(im, bboxes, imname)
-            break
-        # except:
-        #     pass
+            visualize(im, bboxes, landmarks, imname)
+        except:
+            pass
     print(precision.compute())
     print(recall.compute())
 
@@ -259,3 +263,4 @@ tempered-vggblocktemper1:
     precision: 0.5312
     recall: 0.3150
 """
+

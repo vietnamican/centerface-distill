@@ -13,13 +13,6 @@ from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace
 
-model_urls = {
-    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
-}
-
-state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
-                                progress=True)
-
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
                     cfg.downscale, cfg.insize, cfg.train_transforms, 'easy')
