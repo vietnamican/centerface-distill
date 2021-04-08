@@ -1,3 +1,4 @@
+from models.mobilenetv2.mobilenetv2 import MobileNetV2Dense
 import os
 import os.path as osp
 from time import time
@@ -11,11 +12,11 @@ from pytorch_lightning.loggers import TensorBoardLogger
 
 from config import Config as cfg
 from models.model import Model
-from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, MobileNetV2
+from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace, WiderFaceVal
 
 device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
+checkpoint_path = 'checkpoint-epoch=93-val_loss=0.0497.ckpt'
 # checkpoint_path = 'checkpoints/final.pth'
 if device == 'cpu':
     checkpoint = torch.load(
@@ -26,6 +27,7 @@ state_dict = checkpoint['state_dict']
 # state_dict = checkpoint
 
 net = Model(MobileNetV2VGGBlockTemper1)
+# net = Model(MobileNetV2Dense)
 # net = Model(MobileNetV2)
 net.eval()
 net.migrate(state_dict, force=True, verbose=2)
@@ -34,10 +36,10 @@ for i, (name, p) in enumerate(net.named_parameters()):
     print(i, name)
 
 net.eval()
-x = torch.Tensor(1, 3, 1024, 1024)
+x = torch.Tensor(1, 3, 64, 64)
 with torch.no_grad():
     start = time()
-    for i in range(100):
+    for i in range(1):
         net(x)
     stop = time()
     print(stop-start)

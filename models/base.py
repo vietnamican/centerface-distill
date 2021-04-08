@@ -40,22 +40,25 @@ class Base(pl.LightningModule):
         verbose=1: print status of migrate: all is migrated or something
         verbose=2: print all of modules had been migrated
         '''
-        if verbose==0:
+        if verbose == 0:
             def status(i, string):
                 pass
+
             def conclude(is_all_migrated):
                 pass
-        elif verbose==1:
+        elif verbose == 1:
             def status(i, string):
                 pass
+
             def conclude(is_all_migrated):
                 if is_all_migrated:
                     print("all modules had been migrated")
                 else:
                     print("Some modules hadn't been migrated")
-        elif verbose==2:
+        elif verbose == 2:
             def status(i, string):
                 print(i, string)
+
             def conclude(is_all_migrated):
                 if is_all_migrated:
                     print("all modules had been migrated")
@@ -86,7 +89,7 @@ class Base(pl.LightningModule):
                             is_all_migrated = False
                     else:
                         is_all_migrated = False
-        
+
         else:
             print('Force migrating...')
             with torch.no_grad():
@@ -224,7 +227,7 @@ class ConvBatchNormRelu6(Base):
         gamma = self.cbr.bn.weight
         beta = self.cbr.bn.bias
         eps = self.cbr.bn.eps
-        return kernel * (gamma / (running_var + eps).sqrt()).reshape(-1, 1, 1, 1), beta + gamma / (running_var + eps).sqrt() * (bias - running_mean)
+        return kernel * (gamma / (running_var + eps).sqrt()).reshape(-1, *[1]*(kernel.ndimension()-1)), beta + gamma / (running_var + eps).sqrt() * (bias - running_mean)
 
     def _release(self):
         if self.with_bn:
@@ -238,6 +241,129 @@ class ConvBatchNormRelu6(Base):
                 self.cbr = nn.Sequential()
                 self.cbr.add_module('conv', conv)
                 self.cbr.add_module('relu', nn.ReLU6(inplace=True))
+            else:
+                self.cbr = nn.Sequential()
+                self.cbr.add_module('conv', conv)
+
+    def release(self):
+        if not self.is_released:
+            self.is_released = True
+            self._release()
+
+
+class ConvBatchNormRelu(Base):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        if 'with_relu' not in kwargs:
+            self.with_relu = True
+        else:
+            self.with_relu = kwargs['with_relu']
+            kwargs.pop('with_relu', None)
+        if 'with_bn' not in kwargs:
+            self.with_bn = True
+        else:
+            self.with_bn = kwargs['with_bn']
+            kwargs.pop('with_bn', None)
+
+        self.args = args
+        self.kwargs = kwargs
+
+        self.cbr = nn.Sequential()
+        self.cbr.add_module('conv', nn.Conv2d(*args, **kwargs))
+        if self.with_bn:
+            outplanes = args[1]
+            self.cbr.add_module('bn', nn.BatchNorm2d(int(outplanes)))
+        if self.with_relu:
+            self.cbr.add_module('relu', nn.ReLU(inplace=True))
+
+    def forward(self, x):
+        return self.cbr(x)
+
+    def _fuse_bn_tensor(self):
+        kernel = self.cbr.conv.weight
+        bias = self.cbr.conv.bias
+        if bias is None:
+            bias = 0
+        running_mean = self.cbr.bn.running_mean
+        running_var = self.cbr.bn.running_var
+        gamma = self.cbr.bn.weight
+        beta = self.cbr.bn.bias
+        eps = self.cbr.bn.eps
+        return kernel * (gamma / (running_var + eps).sqrt()).reshape(-1, *[1]*(kernel.ndimension()-1)), beta + gamma / (running_var + eps).sqrt() * (bias - running_mean)
+
+    def _release(self):
+        if self.with_bn:
+            self.kwargs['bias'] = True
+            kernel, bias = self._fuse_bn_tensor()
+            conv = nn.Conv2d(*(self.args), **(self.kwargs))
+            with torch.no_grad():
+                conv.weight.copy_(kernel)
+                conv.bias.copy_(bias)
+            if self.with_relu:
+                self.cbr = nn.Sequential()
+                self.cbr.add_module('conv', conv)
+                self.cbr.add_module('relu', nn.ReLU(inplace=True))
+            else:
+                self.cbr = nn.Sequential()
+                self.cbr.add_module('conv', conv)
+
+    def release(self):
+        if not self.is_released:
+            self.is_released = True
+            self._release()
+
+class ConvTransposeBatchNormRelu(Base):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        if 'with_relu' not in kwargs:
+            self.with_relu = True
+        else:
+            self.with_relu = kwargs['with_relu']
+            kwargs.pop('with_relu', None)
+        if 'with_bn' not in kwargs:
+            self.with_bn = True
+        else:
+            self.with_bn = kwargs['with_bn']
+            kwargs.pop('with_bn', None)
+
+        self.args = args
+        self.kwargs = kwargs
+
+        self.cbr = nn.Sequential()
+        self.cbr.add_module('conv', nn.ConvTranspose2d(*args, **kwargs))
+        if self.with_bn:
+            outplanes = args[1]
+            self.cbr.add_module('bn', nn.BatchNorm2d(int(outplanes)))
+        if self.with_relu:
+            self.cbr.add_module('relu', nn.ReLU(inplace=True))
+
+    def forward(self, x):
+        return self.cbr(x)
+
+    def _fuse_bn_tensor(self):
+        kernel = self.cbr.conv.weight
+        bias = self.cbr.conv.bias
+        if bias is None:
+            bias = 0
+        running_mean = self.cbr.bn.running_mean
+        running_var = self.cbr.bn.running_var
+        gamma = self.cbr.bn.weight
+        beta = self.cbr.bn.bias
+        eps = self.cbr.bn.eps
+        return kernel * (gamma / (running_var + eps).sqrt()).reshape(-1, *[1]*(kernel.ndimension()-1)), beta + gamma / (running_var + eps).sqrt() * (bias - running_mean)
+
+    def _release(self):
+        if self.with_bn:
+            self.kwargs['bias'] = True
+            kernel, bias = self._fuse_bn_tensor()
+            conv = nn.ConvTranspose2d(*(self.args), **(self.kwargs))
+            with torch.no_grad():
+                conv.weight.copy_(kernel)
+                conv.bias.copy_(bias)
+            if self.with_relu:
+                self.cbr = nn.Sequential()
+                self.cbr.add_module('conv', conv)
+                self.cbr.add_module('relu', nn.ReLU(inplace=True))
             else:
                 self.cbr = nn.Sequential()
                 self.cbr.add_module('conv', conv)
@@ -350,4 +476,3 @@ class VGGBlock(Base):
                 if hasattr(module, 'release'):
                     module.release()
             self._release()
-

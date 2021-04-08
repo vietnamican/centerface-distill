@@ -29,21 +29,21 @@ recall = AverageMetric()
 #     net.eval()
 #     return net
 
-# device = 'cpu'
-# checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
-# # checkpoint_path = 'checkpoints/final.pth'
-# if device == 'cpu':
-#     checkpoint = torch.load(
-#         checkpoint_path, map_location=lambda storage, loc: storage)
-# else:
-#     checkpoint = torch.load(checkpoint_path)
-# state_dict = checkpoint['state_dict']
-# # state_dict = checkpoint
+device = 'cpu'
+checkpoint_path = 'checkpoint-epoch=93-val_loss=0.0497.ckpt'
+# checkpoint_path = 'checkpoints/final.pth'
+if device == 'cpu':
+    checkpoint = torch.load(
+        checkpoint_path, map_location=lambda storage, loc: storage)
+else:
+    checkpoint = torch.load(checkpoint_path)
+state_dict = checkpoint['state_dict']
+# state_dict = checkpoint
 
-# net = Model(MobileNetV2VGGBlockTemper1)
-# net.eval()
-# net.migrate(state_dict, force=True, verbose=1)
-# net.release()
+net = Model(MobileNetV2VGGBlockTemper1)
+net.eval()
+net.migrate(state_dict, force=True, verbose=1)
+net.release()
 
 
 def iou(box1, box2):
@@ -126,18 +126,23 @@ def postprocess(bboxes, landmarks, params):
 
 
 def detect(net, im):
+    # im = np.array(im).transpose(2, 0, 1)
+    # print(im.shape)
+    # data = torch.from_numpy(im).float()
     data = cfg.test_transforms(im)
     data = data[None, ...]
     with torch.no_grad():
         out = net(data)
-    return out[0]
+    # print(out[0])
+    return out
 
 
 def decode(out):
-    hm = out['hm']
-    wh = out['wh']
-    off = out['off']
-    lm = out['lm']
+    hm = out[0]
+    wh = out[1]
+    off = out[3]
+    lm = out[2]
+    print(hm.shape)
     hm = VisionKit.nms(hm, kernel=3)
     hm.squeeze_()
     off.squeeze_()
@@ -185,7 +190,7 @@ def decode(out):
     return bboxes[keep_indexes], landmarks[keep_indexes]
 
 
-def visualize(im, bboxes, landmarks, name):
+def visualize(im, bboxes, landmarks, name='result.jpg'):
     return VisionKit.visualize(im, bboxes, landmarks, skip=2, name=name)
 
 
@@ -216,13 +221,13 @@ def calculate_metrics(pred_bboxes, gt_bboxes):
             gt_index.append(closest_index)
     return result, pred_index, gt_index
 
-if not os.path.isdir('result189'):
-    os.mkdir('result189')
+if not os.path.isdir('resultxx'):
+    os.mkdir('resultxx')
 
 if __name__ == '__main__':
     # i = 0
     for im, labels, imname, idx in tqdm(testloader):
-        try:
+        # try:
             # i += 1
             # if i == 10:
             #     break
@@ -246,8 +251,8 @@ if __name__ == '__main__':
             precision.update(result, len(bboxes))
             recall.update(result, len(gt_bboxes))
             visualize(im, bboxes, landmarks, imname)
-        except:
-            pass
+        # except:
+        #     pass
     print(precision.compute())
     print(recall.compute())
 

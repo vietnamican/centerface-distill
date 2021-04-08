@@ -23,13 +23,13 @@ class Model(MobileNetSeg):
     def training_step(self, batch, batch_idx):
         data, labels = batch
         out = self(data)
-        heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
+        heatmaps = torch.cat([o[0].squeeze() for o in out], dim=0)
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
-        offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
+        offs = torch.cat([o[3].squeeze() for o in out], dim=0)
         l_off = self.off_loss(offs, labels[:, [1, 2]])
-        whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
+        whs = torch.cat([o[1].squeeze() for o in out], dim=0)
         l_wh = self.wh_loss(whs, labels[:, [3, 4]])
-        lms = torch.cat([o['lm'].squeeze() for o in out], dim=0)
+        lms = torch.cat([o[2].squeeze() for o in out], dim=0)
         l_lm = self.lm_loss(lms, labels[:, 5:])
 
         self.log_dict({'t_heat': l_heatmap, 't_off': l_off,
@@ -42,13 +42,13 @@ class Model(MobileNetSeg):
     def validation_step(self, batch, batch_idx):
         data, labels = batch
         out = self(data)
-        heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
+        heatmaps = torch.cat([o[0].squeeze() for o in out], dim=0)
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
-        offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
+        offs = torch.cat([o[3].squeeze() for o in out], dim=0)
         l_off = self.off_loss(offs, labels[:, [1, 2]])
-        whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
+        whs = torch.cat([o[1].squeeze() for o in out], dim=0)
         l_wh = self.wh_loss(whs, labels[:, [3, 4]])
-        lms = torch.cat([o['lm'].squeeze() for o in out], dim=0)
+        lms = torch.cat([o[2].squeeze() for o in out], dim=0)
         l_lm = self.lm_loss(lms, labels[:, 5:])
 
         self.log_dict({'v_heat': l_heatmap, 'v_off': l_off,
@@ -61,17 +61,17 @@ class Model(MobileNetSeg):
     def test_step(self, batch, batch_idx):
         data, labels, *_ = batch
         out = self(data)
-        heatmaps = torch.cat([o['hm'].squeeze() for o in out], dim=0)
+        heatmaps = torch.cat([o[0].squeeze() for o in out], dim=0)
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
-        offs = torch.cat([o['off'].squeeze() for o in out], dim=0)
+        offs = torch.cat([o[3].squeeze() for o in out], dim=0)
         l_off = self.off_loss(offs, labels[:, [1, 2]])
-        whs = torch.cat([o['wh'].squeeze() for o in out], dim=0)
+        whs = torch.cat([o[1].squeeze() for o in out], dim=0)
         l_wh = self.wh_loss(whs, labels[:, [3, 4]])
         self.log_dict({'heat': l_heatmap, 'off': l_off,
                        'size': l_wh}, prog_bar=False)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.0005, weight_decay=5e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.0005)
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[30,60], gamma=0.1)
         # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         #     optimizer, T_max=90)

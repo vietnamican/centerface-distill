@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from PIL import Image
 
 from models.model import Model
-from models.mobilenetv2 import MobileNetV2VGGBlockTemper1, MobileNetV2
+from models.mobilenetv2 import MobileNetV2VGGBlockTemper1, MobileNetV2, MobileNetV2Dense
 
 from api import postprocess, preprocess, calculate_metrics, detect, decode
 
@@ -16,8 +16,10 @@ torch.set_grad_enabled(False)
 
 def load_model():
     device = 'cpu'
-    checkpoint_path = 'centerface_logs/tuning_vgg_vggblocktemper1/version_2/checkpoints/checkpoint-epoch=139-val_loss=0.0515.ckpt'
+    # checkpoint_path = 'checkpoint-epoch=42-val_loss=0.0498.ckpt'
+    checkpoint_path = 'checkpoint-epoch=93-val_loss=0.0497.ckpt'
     # checkpoint_path = 'checkpoints/final.pth'
+    # checkpoint_path = 'checkpoints/centerface.pt'
     if device == 'cpu':
         checkpoint = torch.load(
             checkpoint_path, map_location=lambda storage, loc: storage)
@@ -25,12 +27,15 @@ def load_model():
         checkpoint = torch.load(checkpoint_path)
     state_dict = checkpoint['state_dict']
     # state_dict = checkpoint
-
+    
+    # net = Model(MobileNetV2)
+    # net = Model(MobileNetV2Dense)
     net = Model(MobileNetV2VGGBlockTemper1)
-    net.eval()
-    net.migrate(state_dict, force=True, verbose=1)
-    net.release()
-    net.eval()
+    # net = checkpoint
+    # net.eval()
+    net.migrate(state_dict, force=True, verbose=2)
+    # net.release()
+    # net.eval()
 
     return net
 
@@ -52,8 +57,10 @@ def draw_box(net, frame):
 if __name__ == "__main__":
     # net = load_model()
     # define a video capture object
-    vid = cv2.VideoCapture(0)
     net = load_model()
+    # for i, (name, p) in enumerate(net.state_dict().items()):
+    #     print(i, name)
+    vid = cv2.VideoCapture(0)
     start = time()
     while(True):
         

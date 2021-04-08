@@ -3,7 +3,7 @@ import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
 import math
 
-from .base import Base
+from .base import Base, ConvBatchNormRelu, ConvTransposeBatchNormRelu
 
 def fill_up_weights(up):
     w = up.weight.data
@@ -28,12 +28,9 @@ class IDAUp(nn.Module):
     def __init__(self, out_dim, channel):
         super(IDAUp, self).__init__()
         self.out_dim = out_dim
-        self.up = nn.Sequential(
-                    nn.ConvTranspose2d(
-                        out_dim, out_dim, kernel_size=2, stride=2, padding=0,
-                        output_padding=0, groups=out_dim, bias=False),
-                    nn.BatchNorm2d(out_dim,eps=0.001,momentum=0.1),
-                    nn.ReLU())
+        self.up = ConvTransposeBatchNormRelu(out_dim, out_dim, kernel_size=2, stride=2, padding=0,
+                        output_padding=0, groups=out_dim, bias=False)
+        self.up.cbr[1].eps = 0.001
         self.conv =  nn.Sequential(
                     nn.Conv2d(channel, out_dim,
                               kernel_size=1, stride=1, bias=False),
@@ -51,16 +48,10 @@ class MobileNetUp(nn.Module):
     def __init__(self, channels, out_dim = 24):
         super(MobileNetUp, self).__init__()
         channels =  channels[::-1]
-        self.conv =  nn.Sequential(
-                    nn.Conv2d(channels[0], out_dim,
-                              kernel_size=1, stride=1, bias=False),
-                    nn.BatchNorm2d(out_dim,eps=0.001,momentum=0.1),
-                    nn.ReLU(inplace=True))
-        self.conv_last =  nn.Sequential(
-                    nn.Conv2d(out_dim,out_dim,
-                              kernel_size=3, stride=1, padding=1 ,bias=False),
-                    nn.BatchNorm2d(out_dim,eps=1e-5,momentum=0.01),
-                    nn.ReLU(inplace=True))
+        self.conv = ConvBatchNormRelu(channels[0], out_dim,
+                              kernel_size=1, stride=1, bias=False)
+        self.conv_last = ConvBatchNormRelu(out_dim,out_dim,
+                              kernel_size=3, stride=1, padding=1 ,bias=False)
 
         for i,channel in enumerate(channels[1:]):
             setattr(self,'up_%d'%(i),IDAUp(out_dim,channel))
@@ -108,7 +99,7 @@ class MobileNetSeg(Base):
     def forward(self, x):
         x = self.base(x)
         x = self.dla_up(x)
-        ret = {}
+        ret = []
         for head in self.heads:
-            ret[head] = self.__getattr__(head)(x)
-        return [ret]
+            ret.append(self.__getattr__(head)(x))
+        return ret

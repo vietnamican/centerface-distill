@@ -103,30 +103,6 @@ class InvertedDenseResidual(nn.Module):
             return self.conv(x)
 
 
-class IDAUp(nn.Module):
-    def __init__(self, out_dim, channel):
-        super(IDAUp, self).__init__()
-        self.out_dim = out_dim
-        self.up = nn.Sequential(
-            nn.ConvTranspose2d(
-                out_dim, out_dim, kernel_size=2, stride=2, padding=0,
-                output_padding=0, groups=out_dim, bias=False),
-            nn.BatchNorm2d(out_dim, eps=0.001, momentum=0.1),
-            nn.ReLU())
-        self.conv = nn.Sequential(
-            nn.Conv2d(channel, out_dim,
-                      kernel_size=1, stride=1, bias=False),
-            nn.BatchNorm2d(out_dim, eps=0.001, momentum=0.1),
-            nn.ReLU(inplace=True))
-
-    def forward(self, layers):
-        layers = list(layers)
-        x = self.up(layers[0])
-        y = self.conv(layers[1])
-        out = x + y
-        return out
-
-
 class MobileNetUp(nn.Module):
     def __init__(self, channels, out_dim=24):
         super(MobileNetUp, self).__init__()
