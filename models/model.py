@@ -23,13 +23,13 @@ class Model(MobileNetSeg):
     def training_step(self, batch, batch_idx):
         data, labels = batch
         out = self(data)
-        heatmaps = torch.cat([o[0].squeeze() for o in out], dim=0)
+        heatmaps = out[0]
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
-        offs = torch.cat([o[3].squeeze() for o in out], dim=0)
+        offs = out[3]
         l_off = self.off_loss(offs, labels[:, [1, 2]])
-        whs = torch.cat([o[1].squeeze() for o in out], dim=0)
+        whs = out[1]
         l_wh = self.wh_loss(whs, labels[:, [3, 4]])
-        lms = torch.cat([o[2].squeeze() for o in out], dim=0)
+        lms = out[2]
         l_lm = self.lm_loss(lms, labels[:, 5:])
 
         self.log_dict({'t_heat': l_heatmap, 't_off': l_off,
@@ -42,13 +42,13 @@ class Model(MobileNetSeg):
     def validation_step(self, batch, batch_idx):
         data, labels = batch
         out = self(data)
-        heatmaps = torch.cat([o[0].squeeze() for o in out], dim=0)
+        heatmaps = out[0]
         l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
-        offs = torch.cat([o[3].squeeze() for o in out], dim=0)
+        offs = out[3]
         l_off = self.off_loss(offs, labels[:, [1, 2]])
-        whs = torch.cat([o[1].squeeze() for o in out], dim=0)
+        whs = out[1]
         l_wh = self.wh_loss(whs, labels[:, [3, 4]])
-        lms = torch.cat([o[2].squeeze() for o in out], dim=0)
+        lms = out[2]
         l_lm = self.lm_loss(lms, labels[:, 5:])
 
         self.log_dict({'v_heat': l_heatmap, 'v_off': l_off,
