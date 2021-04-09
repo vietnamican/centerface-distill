@@ -2,6 +2,7 @@ from models.mobilenetv2.mobilenetv2 import MobileNetV2Dense
 import os
 import os.path as osp
 from time import time
+import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -15,31 +16,16 @@ from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace, WiderFaceVal
 
-device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=93-val_loss=0.0497.ckpt'
-# checkpoint_path = 'checkpoints/final.pth'
-if device == 'cpu':
-    checkpoint = torch.load(
-        checkpoint_path, map_location=lambda storage, loc: storage)
-else:
-    checkpoint = torch.load(checkpoint_path)
-state_dict = checkpoint['state_dict']
-# state_dict = checkpoint
+traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
+                         cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
+trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
+                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
-net = Model(MobileNetV2VGGBlockTemper1)
-# net = Model(MobileNetV2Dense)
-# net = Model(MobileNetV2)
-net.eval()
-net.migrate(state_dict, force=True, verbose=2)
-# net.release()
-for i, (name, p) in enumerate(net.named_parameters()):
-    print(i, name)
+for im, hm, path in trainloader:
+    print(path)
+    print(hm.shape)
+    hm = hm[1, 0]
+    hm[hm > 0.5] = 1
 
-net.eval()
-x = torch.Tensor(1, 3, 64, 64)
-with torch.no_grad():
-    start = time()
-    for i in range(1):
-        net(x)
-    stop = time()
-    print(stop-start)
+    np.savetxt('x.txt', hm, fmt='%d')
+    break
