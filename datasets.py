@@ -70,7 +70,7 @@ class WiderFace(Dataset, VisionKit):
             #3 for width        #4 for height
             #5-14 for five landmarks
         """
-        width, height = im.size
+        height, width = im.shape[:2]
         width = int(width / downscale)
         height = int(height / downscale)
         res = np.zeros([15, height, width], dtype=np.float32)

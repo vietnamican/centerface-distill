@@ -2,6 +2,8 @@ from torch import nn
 import torch.utils.model_zoo as model_zoo
 import math
 
+from .base import ConvTransposeBatchNormRelu
+
 
 def fill_up_weights(up):
     w = up.weight.data
@@ -103,41 +105,22 @@ class InvertedDenseResidual(nn.Module):
             return self.conv(x)
 
 
-class MobileNetUp(nn.Module):
-    def __init__(self, channels, out_dim=24):
-        super(MobileNetUp, self).__init__()
-        channels = channels[::-1]
+class IDAUp(nn.Module):
+    def __init__(self, out_dim, channel):
+        super(IDAUp, self).__init__()
+        self.out_dim = out_dim
+        self.up = ConvTransposeBatchNormRelu(out_dim, out_dim, kernel_size=2, stride=2, padding=0,
+                                             output_padding=0, groups=out_dim, bias=False)
+        self.up.cbr[1].eps = 0.001
         self.conv = nn.Sequential(
-            nn.Conv2d(channels[0], out_dim,
+            nn.Conv2d(channel, out_dim,
                       kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(out_dim, eps=0.001, momentum=0.1),
             nn.ReLU(inplace=True))
-        self.conv_last = nn.Sequential(
-            nn.Conv2d(out_dim, out_dim,
-                      kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(out_dim, eps=1e-5, momentum=0.01),
-            nn.ReLU(inplace=True))
-
-        for i, channel in enumerate(channels[1:]):
-            setattr(self, 'up_%d' % (i), IDAUp(out_dim, channel))
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out')
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.ConvTranspose2d):
-                fill_up_weights(m)
 
     def forward(self, layers):
         layers = list(layers)
-        assert len(layers) > 1
-        x = self.conv(layers[-1])
-        for i in range(0, len(layers)-1):
-            up = getattr(self, 'up_{}'.format(i))
-            x = up([x, layers[len(layers)-2-i]])
-        x = self.conv_last(x)
-        return x
+        x = self.up(layers[0])
+        y = self.conv(layers[1])
+        out = x + y
+        return out

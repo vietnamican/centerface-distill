@@ -20,7 +20,7 @@ class VisionKit:
         Returns:
             im, bboxes, landmarks, scale, offset_x, offset_y
         """
-        canvas = Image.new("RGB", size=size, color="#777")
+        canvas = np.ones((size[1], size[0], 3), dtype=np.uint8) * 119
         target_width, target_height = size
         width, height = im.size
         offset_x = 0
@@ -36,10 +36,7 @@ class VisionKit:
             height_ = int(height * scale)
             offset_y = (target_height - height_) // 2
         im = im.resize((width_, height_), Image.BILINEAR)
-        canvas.paste(im, box=(offset_x, offset_y))
-        # print(scale)
-        # print(offset_x)
-        # print(offset_y)
+        canvas[offset_y:offset_y+height_, offset_x:offset_x+width_] = im
         if bboxes is not None:
             bboxes = bboxes.copy()
             bboxes *= scale

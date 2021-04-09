@@ -1,5 +1,6 @@
 import torch
 from torchvision import transforms as T
+from torchvision.transforms.transforms import ToPILImage
 
 
 class Config:
@@ -10,12 +11,14 @@ class Config:
     sigma = 2.65
 
     train_transforms = T.Compose([
+        T.ToPILImage(),
         T.ColorJitter(0.5, 0.5, 0.5, 0.5),
         T.ToTensor(),
         T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
     ])
 
     test_transforms = T.Compose([
+        T.ToPILImage(),
         T.ToTensor(),
         T.Normalize(mean=[0.5] * channels, std=[0.5] * channels)
     ])

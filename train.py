@@ -16,19 +16,19 @@ from datasets import WiderFace, WiderFaceVal
 
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
+                         cfg.downscale, cfg.insize, cfg.train_transforms, 'train')
 trainloader = DataLoader(traindataset, batch_size=cfg.batch_size,
-                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
 valdataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
-                    cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
+                       cfg.downscale, cfg.insize, cfg.train_transforms, 'val')
 valloader = DataLoader(valdataset, batch_size=cfg.batch_size,
-                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+                       pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 
 testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
-                         cfg.downscale, cfg.insize, cfg.train_transforms)
+                           cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
-                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
+                        pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
 device = 'cpu'
 
 # Network Setup

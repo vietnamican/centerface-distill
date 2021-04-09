@@ -24,7 +24,7 @@ class Model(MobileNetSeg):
         data, labels = batch
         out = self(data)
         heatmaps = out[0]
-        l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
+        l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0:1])
         offs = out[3]
         l_off = self.off_loss(offs, labels[:, [1, 2]])
         whs = out[1]
@@ -43,7 +43,7 @@ class Model(MobileNetSeg):
         data, labels = batch
         out = self(data)
         heatmaps = out[0]
-        l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0])
+        l_heatmap = self.heatmap_loss(heatmaps, labels[:, 0:1])
         offs = out[3]
         l_off = self.off_loss(offs, labels[:, [1, 2]])
         whs = out[1]
