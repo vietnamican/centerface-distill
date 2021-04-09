@@ -6,14 +6,14 @@ import numpy as np
 
 from .mnet import MobileNetSeg
 from .base import Base
-from .loss import RegLoss, AverageMetric
+from .loss import RegLoss, AverageMetric, NegLoss
 
 
 class Model(MobileNetSeg):
     def __init__(self, base):
         super().__init__(base, {'hm': 1, 'wh': 2, 'lm': 10, 'off': 2})
         self.threshold = 0.4
-        self.heatmap_loss = nn.MSELoss()
+        self.heatmap_loss = NegLoss()
         self.wh_loss = RegLoss()
         self.off_loss = RegLoss()
         self.lm_loss = RegLoss()

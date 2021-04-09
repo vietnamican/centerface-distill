@@ -75,6 +75,7 @@ class MobileNetSeg(Base):
                            padding=0, bias=True)
             if 'hm' in head:
                 fc.bias.data.fill_(-2.19)
+                fc = nn.Sequential(fc, nn.Sigmoid())
             else:
                 nn.init.normal_(fc.weight, std=0.001)
                 nn.init.constant_(fc.bias, 0)
