@@ -88,7 +88,6 @@ class WiderFace(Dataset, VisionKit):
     def __getitem__(self, idx):
         path = osp.join(self.root, self.namelist[idx])
         im = cv2.imread(path)
-        im = cv2.
         im = im[:,:,::-1]
         anns = self.annslist[idx]
         im, bboxes, landmarks = self.preprocess(im, anns)
