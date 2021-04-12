@@ -4,7 +4,7 @@ import os.path as osp
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from PIL import Image
+import cv2
 
 from utils import VisionKit
 
@@ -87,7 +87,9 @@ class WiderFace(Dataset, VisionKit):
 
     def __getitem__(self, idx):
         path = osp.join(self.root, self.namelist[idx])
-        im = Image.open(path)
+        im = cv2.imread(path)
+        im = cv2.
+        im = im[:,:,::-1]
         anns = self.annslist[idx]
         im, bboxes, landmarks = self.preprocess(im, anns)
         hm = self.make_heatmaps(im, bboxes, landmarks, self.downscale)
@@ -210,13 +212,14 @@ class WiderFaceVal(Dataset, VisionKit):
 
     def __getitem__(self, idx):
         path = osp.join(self.root, self.namelist[idx])
-        im = Image.open(path)
+        im = cv2.imread(path)
+        im = im[:,:,::-1]
         anns = self.annslist[idx]
-        im, bboxes = self.preprocess(im, anns)
-        hm = self.make_heatmaps(im, bboxes, self.downscale)
+        im, bboxes, landmarks = self.preprocess(im, anns)
+        hm = self.make_heatmaps(im, bboxes, landmarks, self.downscale)
         if self.transforms is not None:
             im = self.transforms(im)
-        return im, hm, self.namelist[idx], idx
+        return im, hm
 
     def __len__(self):
         return len(self.annslist)

@@ -40,7 +40,7 @@ class Config:
     # training
     epoch = 90
     lr = 5e-4
-    batch_size = 2
+    batch_size = 32
     pin_memory = True
     num_workers = 1
     device = 'cuda' if torch.cuda.is_available() else 'cpu'

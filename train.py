@@ -13,6 +13,11 @@ from models.model import Model
 from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2, MobileNetV2Dense
 from datasets import WiderFace, WiderFaceVal
 
+model_urls = {
+    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+}
+state_dict = model_zoo.load_url(model_urls['mobilenet_v2'],
+                                progress=True)
 
 # Data Setup
 traindataset = WiderFace(cfg.dataroot, cfg.annfile, cfg.sigma,
@@ -29,20 +34,13 @@ testdataset = WiderFaceVal(cfg.valdataroot, cfg.valannfile, cfg.sigma,
                            cfg.downscale, cfg.insize, cfg.train_transforms)
 testloader = DataLoader(testdataset, batch_size=cfg.batch_size,
                         pin_memory=cfg.pin_memory, num_workers=cfg.num_workers)
-device = 'cpu'
+device = cfg.device
 
 # Network Setup
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
 
-net = Model(MobileNetV2Dense)
-# net.base.migrate(state_dict, force=True, verbose=2)
-
-# Training Setup
-# optimizer = optim.Adam(net.parameters(), lr=cfg.lr)
-# heatmap_loss = nn.MSELoss()
-# wh_loss = RegLoss()
-# off_loss = RegLoss()
-# lm_loss = RegLoss()
+net = Model(MobileNetV2)
+net.base.migrate(state_dict, force=True, verbose=2)
 
 log_name = 'centerface_logs/training'
 logger = TensorBoardLogger(

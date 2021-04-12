@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from PIL import Image, ImageDraw
+import cv2
+from PIL import ImageDraw
 
 
 class VisionKit:
@@ -22,7 +23,7 @@ class VisionKit:
         """
         canvas = np.ones((size[1], size[0], 3), dtype=np.uint8) * 119
         target_width, target_height = size
-        width, height = im.size
+        height, width = im.shape[:2]
         offset_x = 0
         offset_y = 0
         if height > width:
@@ -35,7 +36,7 @@ class VisionKit:
             scale = width_ / width
             height_ = int(height * scale)
             offset_y = (target_height - height_) // 2
-        im = im.resize((width_, height_), Image.BILINEAR)
+        im = cv2.resize(im, (width_, height_), cv2.INTER_LINEAR)
         canvas[offset_y:offset_y+height_, offset_x:offset_x+width_] = im
         if bboxes is not None:
             bboxes = bboxes.copy()
