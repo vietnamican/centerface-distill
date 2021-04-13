@@ -18,7 +18,10 @@ from models.mobilenetv2 import MobileNetV2VGGBlock, MobileNetV2VGGBlockTemper1, 
 from datasets import WiderFace, WiderFaceVal
 
 
-net = Model(MobileNetV2VGGBlockTemper1)
-summary(net, (3, 416, 416))
+net = Model(MobileNetV2)
+# summary(net, (3, 416, 416))
 
+state = torch.load('checkpoints/final.pth', map_location='cpu')
+print(state.keys())
+net.migrate(state, force=True, verbose=2)
 

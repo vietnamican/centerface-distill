@@ -1,6 +1,7 @@
 import torch
 from torchvision import transforms as T
 from torchvision.transforms.transforms import ToPILImage
+from transforms import RandomHorizontalFlip, Sequence
 
 
 class Config:
@@ -12,6 +13,7 @@ class Config:
     # TODO Horizontal flip
     # TODO Remove landmark
     # TODO Use more transform
+    train_cotransforms = Sequence([RandomHorizontalFlip()])
     train_transforms = T.Compose([
         T.ToPILImage(),
         T.ColorJitter(0.5, 0.5, 0.5, 0.5),
@@ -45,7 +47,7 @@ class Config:
     batch_size = 32
     pin_memory = True
     num_workers = 4
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'gpu' if torch.cuda.is_available() else 'cpu'
 
     # inference
     threshold = 0.4

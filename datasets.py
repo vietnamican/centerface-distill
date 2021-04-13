@@ -62,7 +62,7 @@ def draw(hm, name):
 
 class WiderFace(Dataset, VisionKit):
 
-    def __init__(self, dataroot, annfile, sigma, downscale, insize, transforms=None, mode='train'):
+    def __init__(self, dataroot, annfile, sigma, downscale, insize, cotransforms=None, transforms=None, mode='train'):
         """
         Args:
             dataroot: image file directory
@@ -76,6 +76,7 @@ class WiderFace(Dataset, VisionKit):
         self.sigma = sigma
         self.downscale = downscale
         self.insize = insize
+        self.cotransforms = cotransforms
         self.transforms = transforms
         self.namelist, self.annslist = self.parse_annfile(annfile)
         self.split_index = -1000
@@ -92,6 +93,8 @@ class WiderFace(Dataset, VisionKit):
         anns = self.annslist[idx]
         im, bboxes, landmarks = self.preprocess(im, anns)
         hm = self.make_heatmaps(im, bboxes, landmarks, self.downscale)
+        if self.cotransforms is not None:
+            im, bboxes = self.cotransforms(im, bboxes)
         if self.transforms is not None:
             im = self.transforms(im)
         return im, hm
