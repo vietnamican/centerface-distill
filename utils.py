@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import cv2
 from PIL import ImageDraw
+import cv2
 
 
 class VisionKit:
@@ -70,24 +71,28 @@ class VisionKit:
     @staticmethod
     def visualize(im, bboxes=[], landmarks=[], skip=3, name='result.jpg'):
         im = im.copy()
-        handle = ImageDraw.Draw(im)
+        # handle = ImageDraw.Draw(im)
         for bbox in bboxes:
             # draw bbox
             left, top, right, bottom = map(int, bbox)
-            handle.rectangle([left, top, right, bottom], outline=(0,0,255), width=1)
+            im = cv2.rectangle(im, (left, top), (right, bottom), (0,0,255), 1)
+            # handle.rectangle([left, top, right, bottom], outline=(0,0,255), width=1)
             # draw center Point
-            width = right - left
-            height = bottom - top
-            center_x = left + width // 2
-            center_y = top + height // 2
-            handle.ellipse([center_x-1, center_y-1, center_x+1, center_y+1], width=1)
-        if landmarks is not None and len(landmarks) > 0:
-            for landmark in landmarks:
-                for i in range(0, len(landmark), skip):
-                    x, y = int(landmark[i]), int(landmark[i+1])
-                    handle.ellipse([x-1, y-1, x+1, y+1], fill=(0,127,0), width=1)
+            # width = right - left
+            # height = bottom - top
+            # center_x = left + width // 2
+            # center_y = top + height // 2
+            # im = cv2.ellipse(im, )
+            # handle.ellipse([center_x-1, center_y-1, center_x+1, center_y+1], width=1)
+        # if landmarks is not None and len(landmarks) > 0:
+        #     for landmark in landmarks:
+        #         for i in range(0, len(landmark), skip):
+        #             x, y = int(landmark[i]), int(landmark[i+1])
+        #             handle.ellipse([x-1, y-1, x+1, y+1], fill=(0,127,0), width=1)
         # im.show()
-        im.save('{}'.format(name))
+        # cv2.imwrite('{}'.format(name))
+        cv2.imwrite('resultxxx/{}'.format(name), im)
+        # im.save('{}'.format(name))
         # im.save('resultxx/{}'.format(name))
         return im
 

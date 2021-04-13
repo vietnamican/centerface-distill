@@ -5,7 +5,7 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
-from PIL import Image
+import cv2
 
 # local imports
 from config import Config as cfg
@@ -30,7 +30,7 @@ recall = AverageMetric()
 #     return net
 
 device = 'cpu'
-checkpoint_path = 'checkpoint-epoch=93-val_loss=0.0497.ckpt'
+checkpoint_path = 'checkpoint-epoch=139-val_loss=0.0515.ckpt'
 # checkpoint_path = 'checkpoints/final.pth'
 if device == 'cpu':
     checkpoint = torch.load(
@@ -221,8 +221,8 @@ def calculate_metrics(pred_bboxes, gt_bboxes):
             gt_index.append(closest_index)
     return result, pred_index, gt_index
 
-if not os.path.isdir('resultxx'):
-    os.mkdir('resultxx')
+if not os.path.isdir('resultxxx'):
+    os.mkdir('resultxxx')
 
 if __name__ == '__main__':
     # i = 0
@@ -240,7 +240,7 @@ if __name__ == '__main__':
             gt_bboxes[:, 2] += gt_bboxes[:, 0]
             gt_bboxes[:, 3] += gt_bboxes[:, 1]
 
-            im = Image.open(impath)
+            im = cv2.imread(impath)[:,:,::-1]
             new_im, params = preprocess(im)
             pred = detect(net, new_im)
             bboxes, landmarks = decode(pred)

@@ -5,6 +5,7 @@ from torchmetrics import Metric
 
 
 def _neg_loss(pred, gt):
+    '''focal loss from CornerNet'''
     pos_inds = gt.eq(1)
     neg_inds = gt.lt(1)
 

@@ -2,6 +2,7 @@ import os
 import os.path as osp
 
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 import torch.utils.model_zoo as model_zoo
 import pytorch_lightning as pl
@@ -40,9 +41,15 @@ device = cfg.device
 # net = get_mobile_net(10, {'hm':1, 'wh':2, 'lm':10, 'off':2}, head_conv=24)
 
 net = Model(MobileNetV2)
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        torch.nn.init.xavier_uniform_(m.weight)
+        if m.bias is not None:
+            torch.nn.init.zeros_(m.bias)
+net.apply(weights_init)
 net.base.migrate(state_dict, force=True, verbose=2)
 
-log_name = 'centerface_logs/training'
+log_name = 'centerface_logs/mobilenetv2/training'
 logger = TensorBoardLogger(
     save_dir=os.getcwd(),
     name=log_name,

@@ -214,11 +214,11 @@ class WiderFaceVal(Dataset, VisionKit):
         im = cv2.imread(path)
         im = im[:,:,::-1]
         anns = self.annslist[idx]
-        im, bboxes, landmarks = self.preprocess(im, anns)
-        hm = self.make_heatmaps(im, bboxes, landmarks, self.downscale)
+        im, bboxes = self.preprocess(im, anns)
+        hm = self.make_heatmaps(im, bboxes, self.downscale)
         if self.transforms is not None:
             im = self.transforms(im)
-        return im, hm
+        return im, hm, self.namelist[idx], idx
 
     def __len__(self):
         return len(self.annslist)
@@ -244,7 +244,7 @@ class WiderFaceVal(Dataset, VisionKit):
             #1 for offset x     #2 for offset y
             #3 for width        #4 for height
         """
-        width, height = im.size
+        height, width = im.shape[:2]
         width = int(width / downscale)
         height = int(height / downscale)
         res = np.zeros([5, height, width], dtype=np.float32)

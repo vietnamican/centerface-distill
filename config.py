@@ -9,7 +9,9 @@ class Config:
     channels = 3
     downscale = 4
     sigma = 2.65
-
+    # TODO Horizontal flip
+    # TODO Remove landmark
+    # TODO Use more transform
     train_transforms = T.Compose([
         T.ToPILImage(),
         T.ColorJitter(0.5, 0.5, 0.5, 0.5),
@@ -42,7 +44,7 @@ class Config:
     lr = 5e-4
     batch_size = 32
     pin_memory = True
-    num_workers = 1
+    num_workers = 4
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     # inference
